@@ -42,7 +42,7 @@ layer on top of the automated CI gates — it does **not** re-implement them.
 ## Workflow
 
 ```
-- [ ] 1. Resolve the change set (auto-detect: MR URL/ID → GitLab MCP, else local diff)
+- [ ] 1. Resolve the change set (local branch, or MR number via GitLab MCP + optional local bridge)
 - [ ] 2. Load conventions → read reference.md
 - [ ] 3. Review each changed spec against the checklist
 - [ ] 4. Reuse-first: grep existing specs before flagging any "new" component
@@ -65,19 +65,42 @@ git diff --stat "$BASE"...HEAD -- apis/
 git diff "$BASE"...HEAD -- apis/
 ```
 
-**B. MR URL/ID given** (e.g. `.../-/merge_requests/123` or "MR 123") → GitLab MCP.
-Project `id` is the URL-encoded path
-`paysafe%2Fconsumer%2Fcore-wallet%2Fpaysafe-wallet-saas-api` (or the numeric project id);
-`merge_request_iid` is the MR number.
+**B. MR number (or URL) given → GitLab MCP.** Project is **id `1861`**
+(`paysafe/consumer/embedded-finance/paysafe-wallet-saas-api`). The old `…/core-wallet/…`
+path is **stale** (group renamed) — use the numeric id, or resolve it with `search`
+(`scope: projects`, `search: "paysafe-wallet-saas-api"`) and pick the `embedded-finance`
+hit. `merge_request_iid` is the MR number `N`.
 
-- `get_merge_request` → `{ id, merge_request_iid }` (title, description, source/target).
-- `get_merge_request_diffs` → `{ id, merge_request_iid, per_page: 100 }` (the diffs;
-  page through if truncated).
+- `get_merge_request` → `{ id: "1861", merge_request_iid: N }` — title, description,
+  `target_branch`, `source_branch`, `diff_refs` (report header + version context).
+- `get_merge_request_diffs` → `{ id: "1861", merge_request_iid: N, per_page: 100 }` — the
+  changed hunks (page through). Added files carry full content; modified files are
+  hunks + context.
 
-The GitLab MCP exposes **only** MR metadata + diffs — it has **no file-read tool**
-(`get_file_contents` is GitHub-only). Any check needing more than the hunk (ref
-resolution, reuse greps, example↔schema) requires the files on disk: check out the MR's
-source branch and review via mode A. Use MCP mode only to identify the change set.
+The GitLab MCP has **no file-read and no working code search** here (`get_file_contents`
+is GitHub-only; `search` `scope: blobs`/`merge_requests` return no data — only `projects`
+scope works). Pick a depth:
+
+- **B1 — full review (recommended): bridge to a local clone.** MR head refs exist
+  (`refs/merge-requests/N/head`), so fetch that ref and review at its state in an isolated
+  worktree (leaves your branch untouched):
+
+```bash
+timeout 120 git fetch origin "refs/merge-requests/N/head"
+git worktree add --detach ../mr-N FETCH_HEAD
+cd ../mr-N
+BASE=$(git merge-base "origin/<target_branch>" HEAD)   # <target_branch> from get_merge_request (usually master)
+git diff --stat "$BASE"...HEAD -- apis/
+git diff "$BASE"...HEAD -- apis/
+# run Step 3/4 (checklist + reuse rg recipes) here, then clean up:
+cd - && git worktree remove ../mr-N
+```
+
+- **B2 — diff-only (no clone): pure MCP.** Review the `get_merge_request_diffs` hunks for
+  everything visible (design, naming, status codes, versioning, and example↔schema when
+  both sit in the hunk). **State the reduced depth in the report:** reuse-first discovery
+  (Step 4) and conformance against *unchanged* schemas/examples aren't possible over MCP —
+  recommend re-running with a clone (B1) for a complete review.
 
 If nothing under `apis/` changed, say so and stop.
 
@@ -127,8 +150,8 @@ rg -n -A20 "^\s{4}<NewSchema>:" apis/<file>.yaml
 
 These recipes need a **local checkout** and run from the repo root — already true when the
 skill is invoked inside your project on the branch. In pure MR mode (URL only, no clone),
-grepping isn't available: check out the MR source branch (Step 1), or fall back to the
-[reuse-catalog.md](reuse-catalog.md) registries plus the diff.
+grepping isn't available: use the local bridge (Step 1 · B1), or fall back to the
+[reuse-catalog.md](reuse-catalog.md) registries plus the diff (Step 1 · B2).
 
 If an equivalent exists → **♻️ Reuse**; cite the exact `$ref` or error code.
 

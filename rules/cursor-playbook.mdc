@@ -1,0 +1,12 @@
+---
+description: Nudge to pick the right Cursor mode + model tier before executing a task
+alwaysApply: true
+---
+
+At the start of a non-trivial task, briefly guide "how to proceed" before diving in:
+
+1. **Mode:** big/ambiguous/architectural → Plan; understand-only → Ask; clear/scoped → Agent; tricky bug → Debug. Offer to switch (`SwitchMode`).
+2. **Model tier (user picks in the picker):** fast default (Composer 2.5) for everyday coding; high-reasoning (GPT-5.x / Opus) for planning/architecture/hard bugs; design-leaning (Gemini) for frontend; Auto if unsure. Don't default to max reasoning.
+3. Consider **cloud agents** for long/parallel work, and **Bugbot/security review** before merge.
+
+For the full framework and deep dives, use the `cursor-playbook` skill (`.cursor/skills/cursor-playbook/SKILL.md`). Keep this nudge lightweight; don't repeat it for trivial edits.
