@@ -69,6 +69,53 @@ FieldError:       # field:string, error:string
 a **flat, lowercase `error`** schema (`apis/paysafe-wallet-payments.yaml:2764-2792`) —
 legacy; new specs must reuse the common wrapper.
 
+## Published error codes (MUST — SaaS transparency)
+
+Clients integrate Embedded Wallet against **published** error codes. Source of truth:
+
+https://docs.paysafe.com/docs/embedded-wallets/error-handling
+
+[reuse-catalog.md](reuse-catalog.md) §Error-code registry is only a **high-frequency
+shortcut** — never treat it as complete. When a change set adds or edits `error.code`
+values (examples, named error examples, or response prose), **fetch the docs page** and
+run this decision tree:
+
+```
+For each new/changed error.code in the MR:
+  1. Exact match on the docs page (correct table)?
+       → OK (published). Prefer reusing it over inventing a twin.
+  2. No exact match, but a published code has the same semantic?
+       → ♻️ Reuse that published code. Do not mint a near-duplicate.
+  3. Genuinely new outcome clients must handle?
+       → 🔴 until BOTH:
+          a) naming is DW-<DOMAIN>-<REASON> (UPPER, hyphens; no new numeric /
+             UPPER_SNAKE / DW_ underscore forms), AND
+          b) Error Handling docs are updated (same change set or linked docs MR)
+             with HTTP status + Error Code + Message/Description.
+```
+
+**Table discipline (do not conflate):**
+| Docs section | Use for |
+|--------------|---------|
+| *HTTP Response Errors* / *Common Errors* / *Embedded Wallets Errors* (+ domain subsections) | `error.code` in OpenAPI error response examples |
+| *Transaction Failure Status Reason* | `statusReason` / async failure fields — **not** HTTP `error.code` unless the op truly returns that field as `error.code` |
+
+**Scope:** any code that ships in a **shipped OpenAPI example** (public or `*-internal-*` /
+`x-internal`) — clients (and partners) still read the example.
+
+**Gate only new/changed usage.** Do not force-rewrite every legacy code in untouched
+examples. **Published ≠ style-perfect:** docs still list numeric legacy and some
+`UPPER_SNAKE` / rare `DW_` forms — reusing those published codes in examples is OK; **new**
+codes must be `DW-…` hyphens and must be added to the docs page.
+
+**Flag it when:**
+- 🔴 unpublished `error.code` in a changed example with no docs update.
+- 🔴 new code that duplicates a published semantic (should reuse).
+- 🔴 new code with wrong style (`DW_…`, bare `UPPER_SNAKE`, new numeric) even if a docs
+  PR is promised.
+- 🟡/`♻️` example uses a status-reason code as HTTP `error.code` (or the reverse) without
+  the field actually being that.
+
 ## Naming
 
 | Element | Convention | Cite |
@@ -251,10 +298,34 @@ ordering) — never a restatement of field names/types already visible in the sp
 - Field description explaining format + consumer guidance, not just the type:
   `WalletVersionSupportVersion` (`apis/paysafe-wallet-internal-auth-api.yaml:305-315`).
 
+**Markdown code spans (identifiers & literals):**
+Descriptions are rendered as markdown in Stoplight/portal. Wrap tokens a consumer treats as
+identifiers or contract literals in backticks so they render as code:
+
+| Wrap | Examples |
+|------|----------|
+| Field / property names | `` `language` ``, `` `currencyCode` ``, `` `transcript` `` |
+| Schema / model names | `` `Conversation` ``, `` `Error` `` |
+| Ops / paths / status codes | `` `create-live-chat-conversation` ``, `` `409` `` |
+| Enum / closed-set / error codes | `` `en` ``, `` `ENDED` ``, `` `DW-CUSTOMER-BAD-REQUEST` `` |
+
+Do **not** backtick ordinary English words. Prefer a schema `enum`/`pattern` as the source
+of truth for closed sets; if the description also lists values, every literal must match
+that contract (and be backticked).
+
+**Before / after:**
+- ❌ `Supported values are: en, es, de, fr, it, pl, pt, ru, el, ro.`
+- ✅ wrap each literal: Supported values are: `` `en` ``, `` `es` ``, `` `de` ``, …
+  (better still: rely on `enum` and keep the description to purpose only)
+
 **Flag it when:**
 - 🟡 a **new public operation** ships with only a `summary` (or a `description` that just
   echoes the name — "Get the device.") and no purpose / flow / scenario context.
 - 🟢 a new schema or non-obvious field restates its name instead of its meaning.
+- 🟢 identifiers / enum literals / error codes appear bare in a description (should be
+  `` `code` ``).
+- 🟡/🔴 prose "supported values" disagree with the schema `enum`/`pattern` (drift — not a
+  formatting nit).
 
 Do **not** demand prose for self-evident fields (`amount`, `currencyCode`, `deviceId`) —
 reserve the check for operations, schemas, and fields whose business meaning isn't obvious.
@@ -338,6 +409,9 @@ rg -n -A8 "enum:" apis/<file>.yaml
 rg -n "<field>" apis/<file>.yaml
 # fields cited in error examples — each `field:` must be a real request field of that op
 rg -n -A4 "fieldErrors:" apis/<file>.yaml
+# error codes in the changed file — then verify each new/changed one on Error Handling docs
+rg -n "code: ['\"]?[A-Za-z0-9][A-Za-z0-9_-]*" apis/<file>.yaml
+# fetch: https://docs.paysafe.com/docs/embedded-wallets/error-handling
 ```
 
 **Example-vs-schema validation is not gated in CI** — `validateSpec` checks structure,

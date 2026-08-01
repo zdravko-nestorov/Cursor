@@ -4,8 +4,10 @@ description: >-
   Reviews merge requests that change OpenAPI specs in apis/ for this repository,
   focusing on API design best practices, consistency with the existing specs, reuse of
   already-defined models, fields, parameters, responses and examples, plus example
-  integrity, schema/example conformance and coverage, documentation/spec drift, and
-  contract completeness and lifecycle.
+  integrity, schema/example conformance and coverage, documentation/spec drift,
+  contract completeness and lifecycle, and **published error-code transparency**
+  (codes in examples must exist on the official Error Handling docs — reuse before
+  inventing; new codes MUST be documented there).
   Auto-detects the change set: fetches an MR diff via the GitLab MCP when given an
   MR URL/ID, otherwise diffs the local branch against its default branch. Complements the
   CI gates (oasdiff breaking-changes, version/CHANGELOG, review-confirmation) without
@@ -30,6 +32,10 @@ layer on top of the automated CI gates — it does **not** re-implement them.
 - Documentation quality: business-purpose descriptions (not field restatement), summaries,
   examples.
 - Version-bump **magnitude** — whether the semver increase fits the change (checklist D).
+- **Published error codes (MUST)** — every `error.code` used in changed examples / error
+  responses must be on the official Error Handling docs (or a docs update ships with the
+  change). Reuse before inventing. See checklist A / F and reference.md §Published error
+  codes.
 
 **Out of scope — CI already gates these; mention, never re-run inside a review:**
 - Breaking-change detection → `oasdiff` (`ci/api-breaking-changes/`, OASDiff MCP, or
@@ -46,6 +52,7 @@ layer on top of the automated CI gates — it does **not** re-implement them.
 - [ ] 2. Load conventions → read reference.md
 - [ ] 3. Review each changed spec against the checklist
 - [ ] 4. Reuse-first: grep existing specs before flagging any "new" component
+- [ ] 4b. If error codes / error examples changed → verify against official Error Handling docs (MUST)
 - [ ] 5. Emit the review report (in chat)
 ```
 
@@ -155,6 +162,22 @@ grepping isn't available: use the local bridge (Step 1 · B1), or fall back to t
 
 If an equivalent exists → **♻️ Reuse**; cite the exact `$ref` or error code.
 
+### Step 4b — Published error codes (MUST when codes / error examples change)
+
+Embedded Wallet is a SaaS product: clients integrate against **published** error codes, not
+ad-hoc strings. Canonical list:
+
+https://docs.paysafe.com/docs/embedded-wallets/error-handling
+
+When the change set adds or edits any `error.code` (in examples, named error examples, or
+response descriptions), **fetch that page** (`WebFetch` / browser) and apply the decision
+tree in [reference.md](reference.md) §Published error codes. Do **not** treat
+[reuse-catalog.md](reuse-catalog.md) alone as complete — it is a high-frequency shortcut;
+the docs page is the source of truth.
+
+Gate **new/changed** codes only; do not churn every legacy code already in untouched
+examples.
+
 ### Step 5 — Emit the report
 
 Output the report (template below) in chat. **The current GitLab MCP has no tool to
@@ -175,9 +198,16 @@ deliver findings in chat; the author applies or pastes them.
       `currency`/`country`. New field names match the canonical lexicon (reuse-catalog.md).
 - [ ] Timestamps `format: date-time` (UTC `Z`); calendar dates `format: date`; reuse the
       timestamp field name already used in that spec (don't add a new variant).
-- [ ] New error `code` uses `DW-<DOMAIN>-<REASON>` (UPPER, hyphens) and reuses an existing
-      code when the semantic exists — no numeric, `UPPER_SNAKE`, or `DW_` variants
-      (registry in reuse-catalog.md).
+- [ ] **Error codes are published and reused (MUST).** For every new/changed `error.code`
+      in examples or error responses: (1) confirm it appears on
+      [Error Handling](https://docs.paysafe.com/docs/embedded-wallets/error-handling)
+      under the correct table (`HTTP Response Errors` / `Embedded Wallets Errors` — not
+      conflated with `Transaction Failure Status Reason`); (2) if absent, prefer a
+      **published** code with the same semantic → ♻️; (3) if genuinely new → 🔴 until the
+      code uses `DW-<DOMAIN>-<REASON>` (UPPER, hyphens; no new numeric / `UPPER_SNAKE` /
+      `DW_`) **and** a docs update adds HTTP status + code + message to that page (linked
+      docs MR or same change set). Applies to public and internal specs whenever the code
+      ships in an OpenAPI example. _(ref: reference.md §Published error codes)_
 - [ ] Lists use `{ <items>: [...], meta: PagingResultMeta }` with `limit`/`offset`
       params from common — no cursor/pageToken (not used here).
 - [ ] Shared headers/params (`Signature`, `Authorization`, `Idempotency-Key`) reused,
@@ -229,6 +259,13 @@ deliver findings in chat; the author applies or pastes them.
       behavioural contract (idempotency / side effects) — not a restatement of
       already-visible field names/types. Match reference.md §Description quality; flag a new
       public op shipping only a `summary` or a name-echoing description.
+- [ ] **Identifiers and literals in descriptions use markdown code spans.** Wrap schema /
+      field / op / path names, status codes, error codes, and closed-set / enum values in
+      backticks so portals render them as code — e.g. ``Supported values: `en`, `es`, `de`.``
+      not bare `en, es, de`. Do **not** backtick ordinary prose. Prefer a schema `enum` as
+      the contract; if prose also lists values, they must match the `enum` (see G / H).
+      Missing backticks → 🟢; prose values ≠ schema → escalate under G/H.
+      _(ref: reference.md §Description quality)_
 - [ ] Examples are named `UPPER_SNAKE`; no secrets/PII in examples.
 
 ### F. Examples — conformance, coverage & correctness (high-value; easy to miss)
@@ -260,12 +297,14 @@ _All findings in F cite reference.md §Examples: conformance & coverage._
       examples differing only trivially (a name, a timestamp) collapse to one.
 - [ ] Example **data is coherent** — `sender.role`/author match the content, ids and
       timestamps are plausible, no copy-paste slips (a customer line tagged `role: AGENT`).
-- [ ] **Error examples reference only real inputs.** In a `4xx` example, every
-      `error.fieldErrors[].field` — and any field named in `error.details`/`message` — must
-      be an actual request body property or parameter of *that* operation; a `400` example
-      flagging fields the request never defines (or omitting the field that is actually
-      validated) is a bug. The `code` must be one the operation can return for that input
-      (reuse-catalog.md §Error-code registry).
+- [ ] **Error examples reference only real inputs *and* published codes (MUST).** In a
+      `4xx` example, every `error.fieldErrors[].field` — and any field named in
+      `error.details`/`message` — must be an actual request body property or parameter of
+      *that* operation; a `400` example flagging fields the request never defines (or
+      omitting the field that is actually validated) is a bug. Every `error.code` in the
+      example must be returnable for that input **and** published on
+      [Error Handling](https://docs.paysafe.com/docs/embedded-wallets/error-handling)
+      (or accompanied by a docs-update MUST — see A / reference.md §Published error codes).
 - [ ] Examples on a **response reused across operations** are valid for *each* op — a
       terminal/"end" op reusing a generic `200` must not offer non-terminal states as
       outcomes; give it a dedicated response/examples when the shared set is wrong.
@@ -279,7 +318,9 @@ _All findings in F cite reference.md §Examples: conformance & coverage._
 - [ ] Descriptions are **complete** — finish behaviour/idempotency notes with the
       consequence (e.g. "…else returns `409`, see `ConversationConflict`"); no dangling
       sentences.
-- [ ] Drop "values are examples" on a closed `enum` — the enum *is* the contract.
+- [ ] Drop "values are examples" on a closed `enum` — the enum *is* the contract. A prose
+      "supported values" list must match the schema `enum`/`pattern` exactly (and use
+      backticks per E); do not invent a second, divergent list.
 
 ### H. Completeness & lifecycle
 - [ ] **Status-code parity** — every code named in a description exists in that op's
@@ -335,7 +376,7 @@ then what passed.** Keep it scannable.
 - <one-liners>
 
 ### ✅ Checked, no issues
-<areas swept clean — e.g. naming · data types · pagination · security · version magnitude>
+<areas swept clean — e.g. naming · data types · pagination · security · version magnitude · published error codes>
 
 ### CI gates — not evaluated here
 Breaking changes · version/CHANGELOG format · review-confirmation.
@@ -348,18 +389,25 @@ Every finding needs `file:line`, a concrete fix, and a convention ref.
 **Severity guide:**
 - 🔴 **Blocker** — hard-convention violation, or a bug that misleads a consumer into a
   broken integration: redefined `Error`, `snake_case` property, money as decimal, an
-  example that contradicts its schema, or one flagging / echoing a field the request
-  doesn't define.
+  example that contradicts its schema, one flagging / echoing a field the request doesn't
+  define, an **unpublished** `error.code` in examples (no matching docs entry and no docs
+  update), or inventing a new code that duplicates a published one's semantics.
 - 🟡 **Should fix** — deviates without strong reason; drift that won't break a client today.
-- ♻️ **Reuse** — an existing definition should be used instead of the new one.
-- 🟢 **Nit** — docs / example / style polish.
+- ♻️ **Reuse** — an existing definition / **published** error code should be used instead.
+- 🟢 **Nit** — docs / example / style polish (including missing backticks around
+  identifiers or enum literals in descriptions).
 
 ## Notes
 - Read-only: this skill reviews, it does not edit specs.
 - If asked to also check breaking changes, run
   `./gradlew apiBreakingChangesVerification` or use the OASDiff MCP — do not hand-roll it.
+- Published error-code source of truth:
+  https://docs.paysafe.com/docs/embedded-wallets/error-handling
 
 ## Additional resources
-- [reference.md](reference.md) — full convention catalog with file:line examples.
+- [reference.md](reference.md) — full convention catalog with file:line examples
+  (includes §Published error codes).
 - [reuse-catalog.md](reuse-catalog.md) — reusable components, canonical field lexicon,
-  error-code registry, and the duplication heuristic.
+  high-frequency error-code shortcuts, and the duplication heuristic.
+- [Embedded Wallets — Error Handling](https://docs.paysafe.com/docs/embedded-wallets/error-handling)
+  — canonical published error-code registry for client-facing APIs.

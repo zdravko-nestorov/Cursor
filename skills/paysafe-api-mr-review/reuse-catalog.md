@@ -52,10 +52,20 @@ spec/domain; do not add a new variant.
 
 ## Error-code registry
 
-**Canonical style:** `DW-<DOMAIN>-<REASON>` — UPPER case, hyphen-separated. New codes
-MUST follow this **and** reuse an existing code when the semantic already exists.
+**Canonical published source of truth (MUST verify against this for new/changed codes):**
 
-Reusable high-frequency codes:
+https://docs.paysafe.com/docs/embedded-wallets/error-handling
+
+This table is a **high-frequency shortcut only** — incomplete vs the live docs. Always
+fetch the docs page when the MR touches error examples/codes (see reference.md
+§Published error codes).
+
+**Canonical style for NEW codes:** `DW-<DOMAIN>-<REASON>` — UPPER case, hyphen-separated.
+MUST reuse a **published** code when the semantic already exists. Genuinely new codes
+MUST be added to the Error Handling docs (HTTP status + code + message) in the same
+change set or a linked docs MR — unpublished codes in OpenAPI examples are a 🔴 blocker.
+
+Reusable high-frequency codes (confirm still listed on the docs page):
 
 | Purpose | Code(s) |
 |---------|---------|
@@ -67,15 +77,20 @@ Reusable high-frequency codes:
 | 429 | `DW-TOO-MANY-REQUESTS` |
 | domain | `DW-INSUFFICIENT-FUNDS`, `DW-<X>-LIMIT-EXCEEDED` |
 
-**Legacy — do not mint new ones:** numeric Paysafe codes `5269`, `5068`, `5279`, `5270`,
-`5275`, `1200`, `1000`, `5285`.
+**Legacy — do not mint new ones** (reuse only if already published / already in the op):
+numeric Paysafe codes `5269`, `5068`, `5279`, `5270`, `5275`, `1200`, `1000`, `5285`.
 
-**Avoid / flag as drift:**
+**Avoid / flag as drift for NEW codes:**
 - Underscore `DW_...` (e.g. `DW_CUSTOMER_CURRENCY_NOT_SUPPORTED`) duplicates the hyphen
   form `DW-CUSTOMER-CURRENCY-NOT-SUPPORTED`. Use hyphens.
 - Bare `UPPER_SNAKE` (`TRANSFER_LIMIT_EXCEEDED`, `INSUFFICIENT_FUNDS`,
-  `MOBILE_NUMBER_ALREADY_EXISTS`) duplicates `DW-` forms. Prefer the `DW-` form.
+  `MOBILE_NUMBER_ALREADY_EXISTS`) — prefer the published `DW-` form when one exists.
 - Example placeholders are not codes: `VOUCHER-ABC123`, `VPS`, `MYAGENT3`, raw hashes.
+- Do not invent a twin of a code already on the Error Handling page.
+
+**Do not conflate:** `Transaction Failure Status Reason` codes on the same docs page are
+for `statusReason` / async failure — not HTTP `error.code` unless the operation truly
+returns that value as `error.code`.
 
 ## Duplication heuristic (when is it a duplicate → ♻️ Reuse)
 
@@ -84,8 +99,10 @@ Treat a new schema/field/param/code as a probable duplicate if **any** hold:
 - Same **property set** (±1 field) as an existing schema, even under a different name.
 - Encodes a **lexicon concept** under a new name/type (e.g. a new `currency` string
   instead of `currencyCode` + `Currency`).
-- New **error code** semantically equal to an existing one.
+- New **error code** semantically equal to an **existing published** one (Error Handling
+  docs) or to one already used in `apis/`.
 - New **parameter** matching an existing `components/parameters` (`Limit`, `Offset`,
   `Signature`, …).
 
-When probable, the finding names the exact existing `$ref` / code to use instead.
+When probable, the finding names the exact existing `$ref` / **published** code to use
+instead.
