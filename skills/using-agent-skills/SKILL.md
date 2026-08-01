@@ -16,6 +16,8 @@ When a task arrives, identify the development phase and apply the corresponding 
 ```
 Task arrives
     │
+    ├── Architecture / module / domain / data-system design?
+    │     → using-architecture-skills  (then one primary book skill)
     ├── Don't know what you want yet? ──────→ interview-me
     ├── Have a rough concept, need variants? → idea-refine
     ├── New project/feature/change? ──→ spec-driven-development
