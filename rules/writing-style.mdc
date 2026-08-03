@@ -1,0 +1,54 @@
+---
+description: Output style - plain simple English, and never em/en dashes
+alwaysApply: true
+---
+
+# Writing Style
+
+Applies to every text produced: chat replies, code comments, commit messages, PR
+and MR descriptions, docs, Jira and Confluence content, Slack messages, emails.
+It does not apply to code identifiers or to text quoted from another source.
+
+## Plain English
+
+The writer and most readers are not native English speakers. Write so nobody
+needs a dictionary or a second read.
+
+- One idea per sentence. Aim for 15 words or fewer.
+- Max 3 sentences per paragraph.
+- Pick the everyday word: `use` not `utilize`, `start` not `commence`, `about`
+  not `regarding`, `so` not `hence`, `set up` not `provision`.
+- Explain a technical term the first time it appears, in 6 words or fewer.
+  Format: `term (short plain meaning)`.
+- No idioms, metaphors, or cultural references. Not `low-hanging fruit`, not
+  `move the needle`, not `boil the ocean`.
+- No filler openers: `I hope this finds you well`, `I wanted to reach out`,
+  `as per my last email`, `it is worth noting that`, `at the end of the day`.
+- No marketing or AI-sounding words: `seamless`, `robust`, `leverage`, `delve`,
+  `elevate`, `unlock`, `game-changer`, `it is not just X, it is Y`.
+- Active voice, with the actor named. `The job retries the payment` beats
+  `the payment is retried`.
+- Give the number or the fact. `Takes about 200 ms` beats `may be a bit slower`.
+- If a sentence needs a second read, split it into two.
+
+Simple is not vague. Keep every fact, name, number, path, and version exact.
+Short plain sentences, not fragments or telegraph style.
+
+## No Em-Dashes
+
+Never use em-dashes (`—`, U+2014) or en-dashes (`–`, U+2013) in any output: chat responses, code, comments, commit messages, docs, or file names. Use a plain hyphen-minus (`-`, U+002D) instead.
+
+- For a pause or aside, rewrite with a hyphen, comma, parentheses, or a new sentence.
+- For ranges, use a hyphen: `1-10`, not `1–10`.
+- Applies to generated text AND edited files. Do not introduce these characters even if nearby text already contains them.
+
+## Examples
+
+```
+❌ The build failed — the tests were missing.
+✅ The build failed - the tests were missing.
+✅ The build failed. The tests were missing.
+
+❌ pages 5–9
+✅ pages 5-9
+```
