@@ -1,6 +1,6 @@
 ---
 description: Nudge to pick the right Cursor mode + model tier before executing a task
-alwaysApply: true
+alwaysApply: false
 ---
 
 At the start of a non-trivial task, briefly guide "how to proceed" before diving in:
