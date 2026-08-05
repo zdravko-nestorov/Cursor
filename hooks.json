@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "hooks": {
+    "postToolUse": [
+      {
+        "command": "python3 ./hooks/check-dashes.py",
+        "matcher": "Write|Edit|StrReplace|MultiEdit|SearchReplace|EditNotebook",
+        "timeout": 10,
+        "failClosed": false
+      }
+    ]
+  }
+}
