@@ -5,7 +5,7 @@ description: >-
   (Ousterhout, Clean Architecture, DDD Distilled, DDIA, PoEAA). Use when
   starting architecture work, choosing module boundaries, domain modeling,
   data-system design, enterprise layering, or when unsure which architecture
-  skill to apply. Complements Addy agent-skills (delivery) — does not replace them.
+  skill to apply. Complements Addy agent-skills (delivery) - does not replace them.
 ---
 
 # Using Architecture Skills
@@ -14,7 +14,7 @@ description: >-
 
 | Layer | Skills | Job |
 |---|---|---|
-| **Delivery / process** | Addy (`using-agent-skills`, `/spec`, `/build`, …) | What to build, how to ship |
+| **Delivery / process** | `using-agent-skills` and the skills it routes to | What to build, how to ship |
 | **Architecture / design** | This pack | How to structure modules, domains, data, boundaries |
 
 Use **both**: Addy for the workflow; architecture skills for design pressure inside that workflow.
@@ -72,7 +72,7 @@ From the ciembor compatibility matrix:
 
 - These skills are **model-invocable**: the agent should auto-select them from the task description.
 - You can also name them explicitly: e.g. “use clean-architecture” or “apply DDD Distilled”.
-- `reference.md` inside each skill is the **full** book pack — read only for deep audits, not every turn.
+- `reference.md` inside each skill is the **full** book pack - read only for deep audits, not every turn.
 
 ## Operating rules
 
