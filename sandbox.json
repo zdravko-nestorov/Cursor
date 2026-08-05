@@ -1,0 +1,12 @@
+{
+  "type": "workspace_readwrite",
+  "additionalReadwritePaths": [
+    "/tmp",
+    "/private/tmp",
+    "/Users/zdravko.nestorov/.gradle",
+    "/Users/zdravko.nestorov/.m2",
+    "/Users/zdravko.nestorov/.npm",
+    "/Users/zdravko.nestorov/.cache",
+    "/Users/zdravko.nestorov/Library/Caches"
+  ]
+}

@@ -50,14 +50,28 @@ projects/*/*
 projects/
 skills-cursor/
 plugins/
+# Plan-mode artifacts belong to the project they were written for, not here
+plans/
 # Track personal references (not covered by the managed allowlist)
 !references/
 !references/**
 # Keep this ignore file itself under version control
 !.gitignore
+# Setup notes for cloning this repo onto a new machine
+!README.md
 # Portable agent policy + MCP template (never the live mcp.json with tokens)
 !permissions.json
 !mcp.json.example
+# Sandbox policy: global, and the part Cursor actually enforces
+!sandbox.json
+# CLI permission globs, split out of cli-config.json which holds account details
+!cli-permissions.json
+!scripts/
+!scripts/**
+# Agent hooks
+!hooks.json
+!hooks/
+!hooks/**
 # Ignore macOS Finder metadata anywhere in the tree
 .DS_Store
 # Local Python envs and bytecode under allowlisted skills/
