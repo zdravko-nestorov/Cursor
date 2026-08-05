@@ -6,18 +6,18 @@ A cloud agent is a Cursor agent that runs on a **remote machine (its own VM)** i
 ## Why it matters
 - **Parallelism:** kick off several agents on independent tasks; keep coding locally while they run.
 - **Long-horizon work:** tasks that would tie up your machine for a long time run remotely.
-- **Handoff-ready output:** results come back as a **PR/MR** you can review, plus optional demos — not just a diff in your chat.
+- **Handoff-ready output:** results come back as a **PR/MR** you can review, plus optional demos - not just a diff in your chat.
 - **Automation:** cloud agents are the engine behind event-driven workflows (e.g. Bugbot Autofix spawns a cloud agent when a PR is opened).
 
 ## When to use
 - Large refactors, migrations, or codemods across many files.
 - "Go implement this ticket and open a PR" style delegation.
 - Batch/repetitive changes.
-- Anything you want to run unattended (use a **cheaper/Standard model tier** — no human is watching, so throughput doesn't matter).
+- Anything you want to run unattended (use a **cheaper/Standard model tier** - no human is watching, so throughput doesn't matter).
 
 ## When NOT to use
-- Tight interactive loops where you're iterating second-by-second — stay local in Agent mode.
-- Tiny changes — the setup overhead isn't worth it.
+- Tight interactive loops where you're iterating second-by-second - stay local in Agent mode.
+- Tiny changes - the setup overhead isn't worth it.
 
 ## How it works (mental model)
 ```
@@ -33,7 +33,7 @@ Start cloud agents from the Cursor dashboard / agents surface (`cursor.com/agent
 - **Bitbucket** (incl. Data Center): supported.
 
 ### GitLab self-hosted setup (high level)
-Requires a **Teams or Enterprise** plan and a **paid GitLab plan** (Premium/Ultimate — project access tokens don't exist on GitLab Free). An admin registers a GitLab application:
+Requires a **Teams or Enterprise** plan and a **paid GitLab plan** (Premium/Ultimate - project access tokens don't exist on GitLab Free). An admin registers a GitLab application:
 - Redirect URI: `https://cursor.com/gitlab-connected`
 - Trusted: `true`, Confidential: `true`
 - Scopes: `api` and `write_repository`

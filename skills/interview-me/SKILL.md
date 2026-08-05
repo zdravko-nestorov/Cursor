@@ -39,16 +39,16 @@ This skill needs a live, responsive user. **Do not invoke in non-interactive con
 
 ### Step 1: Hypothesize, with a confidence number
 
-Before asking anything, write down your current best read of what the user wants in **one sentence**, plus an honest confidence number (0–100%):
+Before asking anything, write down your current best read of what the user wants in **one sentence**, plus an honest confidence number (0-100%):
 
 ```
 HYPOTHESIS: You want a way to answer "how are we doing?" in standup, and "dashboard" was the convention that came to mind.
-CONFIDENCE: ~30% — missing: who it's for, what "metrics" means in context, and what success looks like
+CONFIDENCE: ~30% - missing: who it's for, what "metrics" means in context, and what success looks like
 ```
 
 The number forces honesty. If you wrote down a high number but can't actually predict the user's reactions to the next three questions you'd ask, the number is wrong. Start at the confidence level you can defend.
 
-When confidence is below ~70%, append a brief reason on the same line — what's still unresolved or missing. This tells the user exactly what the interview needs to surface, and prevents the number from being a vague signal.
+When confidence is below ~70%, append a brief reason on the same line - what's still unresolved or missing. This tells the user exactly what the interview needs to surface, and prevents the number from being a vague signal.
 
 ### Step 2: Ask one question at a time, each with a guess attached
 
@@ -83,7 +83,7 @@ The most dangerous answers are the ones where the user says what a thoughtful an
 - Answers that pattern-match best-practice talk ("I want it to be scalable", "clean architecture") without specifics
 - Answers that defer to convention ("the way most apps do it", "the standard approach")
 - Phrases like "I should probably…", "I think I'm supposed to…", "good engineering practice says…"
-- Buzzwords as goals — when "modern", "scalable", "robust" are the answer instead of a specific outcome
+- Buzzwords as goals - when "modern", "scalable", "robust" are the answer instead of a specific outcome
 
 When you hear these, the question to ask is:
 
@@ -93,24 +93,24 @@ That single question often does more work than the previous five.
 
 ### Step 4: Restate intent in the user's own words
 
-When your confidence is high, write back what you now think the user wants. Keep it tight (5–8 lines), use their language where possible, and structure it so the user can confirm or correct line by line:
+When your confidence is high, write back what you now think the user wants. Keep it tight (5-8 lines), use their language where possible, and structure it so the user can confirm or correct line by line:
 
 ```
 Here's what I now think you want:
 
 - Outcome:      <one line>
-- User:         <one line — who benefits>
-- Why now:      <one line — what changed>
-- Success:      <one line — how we know it worked>
-- Constraint:   <one line — the binding limit>
-- Out of scope: <one line — what we're explicitly not doing>
+- User:         <one line - who benefits>
+- Why now:      <one line - what changed>
+- Success:      <one line - how we know it worked>
+- Constraint:   <one line - the binding limit>
+- Out of scope: <one line - what we're explicitly not doing>
 
 Yes / no / refine?
 ```
 
 Including "Out of scope" is non-negotiable. Half of misalignment is silent disagreement about what is *not* being built.
 
-### Step 5: Confirm — explicit yes, not "whatever you think"
+### Step 5: Confirm - explicit yes, not "whatever you think"
 
 The gate is an explicit "yes." The following are **not** yes:
 
@@ -157,15 +157,15 @@ User: build me a dashboard for our metrics
 
 Agent:
 HYPOTHESIS: You want a way to answer "how are we doing?" in standup, and "dashboard" came to mind because that's the conventional answer.
-CONFIDENCE: ~30% — missing: who it's for, what "metrics" are, and what success looks like
+CONFIDENCE: ~30% - missing: who it's for, what "metrics" are, and what success looks like
 
-Q:     When you say "how are we doing?", who's asking — you alone, the engineering team in standup, or up the chain (e.g., your manager, an exec, a board)?
+Q:     When you say "how are we doing?", who's asking - you alone, the engineering team in standup, or up the chain (e.g., your manager, an exec, a board)?
 GUESS: engineering team in standup, because "we" usually scopes that way and standups are where this question gets asked. If it's for execs the metrics and the framing change a lot.
 
 User: It's actually for me. I keep losing track of which experiments are running and what their early signal looks like.
 
 Agent:
-Updated read: not a team dashboard at all. It's a personal experiment tracker. Confidence: ~60% — still missing: what "early signal" means and what done looks like.
+Updated read: not a team dashboard at all. It's a personal experiment tracker. Confidence: ~60% - still missing: what "early signal" means and what done looks like.
 
 Q:     Is the gap that you don't know which experiments exist, or that you can't see their results in one place?
 GUESS: the second one. You have a list of experiments somewhere, but their results live in five different tools, and reconciling them by hand is what you're tired of.
@@ -190,7 +190,7 @@ Two questions in, the agent has discovered the actual ask isn't "a dashboard." I
 | Rationalization | Reality |
 |---|---|
 | "The ask is clear enough" | If you can't write the user's desired outcome in one sentence right now, the ask isn't clear. Run Step 1 before deciding. |
-| "Asking too many questions wastes their time" | Time wasted by 4–6 targeted questions is small. Time wasted by building the wrong thing is enormous, and the user is the one bearing that cost. |
+| "Asking too many questions wastes their time" | Time wasted by 4-6 targeted questions is small. Time wasted by building the wrong thing is enormous, and the user is the one bearing that cost. |
 | "I'll figure it out as I build" | Switching costs after code exists are 10x what they are now. Discovery during implementation is rework. |
 | "They said 'whatever you think,' so I should just decide" | "Whatever you think" is delegation, not decision. Re-ask with two concrete options as a choice. |
 | "I should give them several options to pick from" | Options work when the user knows what they want and is choosing between trade-offs. They don't know what they want yet. Listing options widens the search; asking narrows it. |

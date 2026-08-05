@@ -16,7 +16,7 @@ description: >-
 The short version of "how to proceed" in Cursor. Two ideas drive everything:
 
 1. **Mode before execution.** Understand and design in a read-only mode first, then execute. This is the single biggest lever for output quality and wasted-token reduction.
-2. **Models are a tool belt.** Match the model to the task. The highest-reasoning model is not the best default — it is slower and more expensive, and overkill for most edits.
+2. **Models are a tool belt.** Match the model to the task. The highest-reasoning model is not the best default - it is slower and more expensive, and overkill for most edits.
 
 This skill is the hub. Each topic has a plain-language deep dive in the references library; read the relevant one when you need the "why" and "how."
 
@@ -38,19 +38,19 @@ Run this quickly at the start of any non-trivial task. Recommend a mode/model to
 4. Before merge: run automated review (Bugbot / security) on the PR.
 ```
 
-When in doubt about the model, **Auto** is a safe choice — it routes by prompt complexity.
+When in doubt about the model, **Auto** is a safe choice - it routes by prompt complexity.
 
 ---
 
 ## Decision table: task → mode → model tier
 
-| Task | Mode | Model tier (examples — check the picker) |
+| Task | Mode | Model tier (examples - check the picker) |
 |------|------|------------------------------------------|
 | "How does X work?", explore architecture, read-only Q&A | **Ask** | Fast default (Composer 2.5) or Auto |
 | Small edits, refactors, tests, tight write→run→fix loop | **Agent** | Fast default (Composer 2.5) |
 | Complex feature, many files, unclear scope, design/architecture | **Plan** first | High-reasoning (GPT-5.x, Opus, Sonnet-thinking) → then switch to fast to execute |
 | Subtle/hard bug, needs runtime evidence | **Debug** | High-reasoning |
-| Frontend / UI / design-heavy work | Agent (or Plan) | Design-leaning (Gemini) — worth testing; see `frontend-ui-engineering` |
+| Frontend / UI / design-heavy work | Agent (or Plan) | Design-leaning (Gemini) - worth testing; see `frontend-ui-engineering` |
 | Not sure | any | **Auto** (routes by complexity) |
 
 Rationale for the "Plan with a big model, execute with a fast one" split: the hard part is usually deciding **what** to change. Spend reasoning budget on the plan, then hand a precise plan to a fast model for the mechanical **how**.
@@ -59,10 +59,10 @@ Rationale for the "Plan with a big model, execute with a fast one" split: the ha
 
 ## Model tiers (the tool belt)
 
-- **Fast default** — everyday agentic coding: file edits, terminal, multi-file changes, iteration. Fast and cheap. *Currently: Composer 2.5 (Fast variant is the in-IDE default; Standard is same intelligence, cheaper, for background/CI).*
-- **High-reasoning / frontier** — complex planning, architecture, gnarly debugging, subtle correctness. Slower, pricier; use deliberately. *Currently: GPT-5.x, Opus, Sonnet "thinking" tiers.*
-- **Design-leaning** — frontend/UX/visual work. *Currently: Gemini — test it for your workflow.*
-- **Auto** — routes by prompt complexity when you don't want to choose.
+- **Fast default** - everyday agentic coding: file edits, terminal, multi-file changes, iteration. Fast and cheap. *Currently: Composer 2.5 (Fast variant is the in-IDE default; Standard is same intelligence, cheaper, for background/CI).*
+- **High-reasoning / frontier** - complex planning, architecture, gnarly debugging, subtle correctness. Slower, pricier; use deliberately. *Currently: GPT-5.x, Opus, Sonnet "thinking" tiers.*
+- **Design-leaning** - frontend/UX/visual work. *Currently: Gemini - test it for your workflow.*
+- **Auto** - routes by prompt complexity when you don't want to choose.
 
 Model names churn constantly. Pick by **tier**, not by memorizing versions; confirm what's live in the model picker. Full detail: `references/cursor-models.md`.
 
@@ -70,10 +70,10 @@ Model names churn constantly. Pick by **tier**, not by memorizing versions; conf
 
 ## When to reach for the bigger tools
 
-- **Cloud agents** — long-running, parallel, or "kick it off and walk away" work; can open PRs and even demo results. Also how self-hosted / GitLab automation runs. See `references/cursor-cloud-agents.md`.
-- **Automated review (Bugbot + security)** — catch bugs and vulnerabilities on PRs/MRs before merge; Bugbot can auto-fix via cloud agents. Can be a mandatory pre-merge check. See `references/cursor-code-review.md`.
-- **Working at scale** (skills, MCP, plugins, repo indexing, semantic search, browser context) — how to give the agent the right context on large projects. See `references/cursor-working-at-scale.md`.
-- **Profiling** — Cursor has no built-in profiler; use your stack's profiler, then attach the trace/flamegraph and let Agent run a measure → change → measure loop. See `references/cursor-profiling.md`.
+- **Cloud agents** - long-running, parallel, or "kick it off and walk away" work; can open PRs and even demo results. Also how self-hosted / GitLab automation runs. See `references/cursor-cloud-agents.md`.
+- **Automated review (Bugbot + security)** - catch bugs and vulnerabilities on PRs/MRs before merge; Bugbot can auto-fix via cloud agents. Can be a mandatory pre-merge check. See `references/cursor-code-review.md`.
+- **Working at scale** (skills, MCP, plugins, repo indexing, semantic search, browser context) - how to give the agent the right context on large projects. See `references/cursor-working-at-scale.md`.
+- **Profiling** - Cursor has no built-in profiler; use your stack's profiler, then attach the trace/flamegraph and let Agent run a measure → change → measure loop. See `references/cursor-profiling.md`.
 
 ---
 
@@ -81,13 +81,13 @@ Model names churn constantly. Pick by **tier**, not by memorizing versions; conf
 
 Read the one that matches the moment:
 
-- `references/cursor-models.md` — models as a tool belt; which model when, and why.
-- `references/cursor-modes.md` — Ask / Plan / Agent / Debug, and the Ask→Plan→Agent flow.
-- `references/cursor-cloud-agents.md` — cloud agents, PRs, demos, GitLab + self-hosted.
-- `references/cursor-code-review.md` — Bugbot and security review agents.
-- `references/cursor-working-at-scale.md` — skills, MCP, plugins, indexing, semantic search, browser context.
-- `references/cursor-profiling.md` — the performance measure→change→measure loop.
-- `references/cursor-resources.md` — official links, workshops, and open questions for the Cursor team.
+- `references/cursor-models.md` - models as a tool belt; which model when, and why.
+- `references/cursor-modes.md` - Ask / Plan / Agent / Debug, and the Ask→Plan→Agent flow.
+- `references/cursor-cloud-agents.md` - cloud agents, PRs, demos, GitLab + self-hosted.
+- `references/cursor-code-review.md` - Bugbot and security review agents.
+- `references/cursor-working-at-scale.md` - skills, MCP, plugins, indexing, semantic search, browser context.
+- `references/cursor-profiling.md` - the performance measure→change→measure loop.
+- `references/cursor-resources.md` - official links, workshops, and open questions for the Cursor team.
 
 ## Relationship to the engineering skills
 

@@ -17,7 +17,7 @@ Always. Every code change flows through git.
 
 ### Trunk-Based Development (Recommended)
 
-Keep `main` always deployable. Work in short-lived feature branches that merge back within 1-3 days. Long-lived development branches are hidden costs — they diverge, create merge conflicts, and delay integration. DORA research consistently shows trunk-based development correlates with high-performing engineering teams.
+Keep `main` always deployable. Work in short-lived feature branches that merge back within 1-3 days. Long-lived development branches are hidden costs - they diverge, create merge conflicts, and delay integration. DORA research consistently shows trunk-based development correlates with high-performing engineering teams.
 
 ```
 main ──●──●──●──●──●──●──●──●──●──  (always deployable)
@@ -25,7 +25,7 @@ main ──●──●──●──●──●──●──●──●─
          ●──●─╱    ●──╱    ← short-lived feature branches (1-3 days)
 ```
 
-This is the recommended default. Teams using gitflow or long-lived branches can adapt the principles (atomic commits, small changes, descriptive messages) to their branching model — the commit discipline matters more than the specific branching strategy.
+This is the recommended default. Teams using gitflow or long-lived branches can adapt the principles (atomic commits, small changes, descriptive messages) to their branching model - the commit discipline matters more than the specific branching strategy.
 
 - **Dev branches are costs.** Every day a branch lives, it accumulates merge risk.
 - **Release branches are acceptable.** When you need to stabilize a release while main moves forward.
@@ -86,16 +86,16 @@ update auth.ts
 ```
 
 **Types:**
-- `feat` — New feature
-- `fix` — Bug fix
-- `refactor` — Code change that neither fixes a bug nor adds a feature
-- `test` — Adding or updating tests
-- `docs` — Documentation only
-- `chore` — Tooling, dependencies, config
+- `feat` - New feature
+- `fix` - Bug fix
+- `refactor` - Code change that neither fixes a bug nor adds a feature
+- `test` - Adding or updating tests
+- `docs` - Documentation only
+- `chore` - Tooling, dependencies, config
 
 ### 4. Keep Concerns Separate
 
-Don't combine formatting changes with behavior changes. Don't combine refactors with features. Each type of change should be a separate commit — and ideally a separate PR:
+Don't combine formatting changes with behavior changes. Don't combine refactors with features. Each type of change should be a separate commit - and ideally a separate PR:
 
 ```
 # Good: Separate concerns
@@ -106,7 +106,7 @@ git commit -m "feat: add phone number validation to registration"
 git commit -m "refactor validation and add phone number field"
 ```
 
-**Separate refactoring from feature work.** A refactoring change and a feature change are two different changes — submit them separately. This makes each change easier to review, revert, and understand in history. Small cleanups (renaming a variable) can be included in a feature commit at reviewer discretion.
+**Separate refactoring from feature work.** A refactoring change and a feature change are two different changes - submit them separately. This makes each change easier to review, revert, and understand in history. Small cleanups (renaming a variable) can be included in a feature commit at reviewer discretion.
 
 ### 5. Size Your Changes
 
@@ -131,7 +131,7 @@ main (always deployable)
 ```
 
 - Branch from `main` (or the team's default branch)
-- Keep branches short-lived (merge within 1-3 days) — long-lived branches are hidden costs
+- Keep branches short-lived (merge within 1-3 days) - long-lived branches are hidden costs
 - Delete branches after merge
 - Prefer feature flags over long-lived branches for incomplete features
 
@@ -167,7 +167,7 @@ git worktree remove ../project-feature-a
 Benefits:
 - Multiple agents can work on different features simultaneously
 - No branch switching needed (each directory has its own branch)
-- If one experiment fails, delete the worktree — nothing is lost
+- If one experiment fails, delete the worktree - nothing is lost
 - Changes are isolated until explicitly merged
 
 ## The Save Point Pattern
@@ -202,11 +202,11 @@ THINGS I DIDN'T TOUCH (intentionally):
 - src/middleware/error.ts: Error format could be improved (separate task)
 
 POTENTIAL CONCERNS:
-- The Zod schema is strict — rejects extra fields. Confirm this is desired.
-- Added zod as a dependency (72KB gzipped) — already in package.json
+- The Zod schema is strict - rejects extra fields. Confirm this is desired.
+- Added zod as a dependency (72KB gzipped) - already in package.json
 ```
 
-This pattern catches wrong assumptions early and gives reviewers a clear map of the change. The "DIDN'T TOUCH" section is especially important — it shows you exercised scope discipline and didn't go on an unsolicited renovation.
+This pattern catches wrong assumptions early and gives reviewers a clear map of the change. The "DIDN'T TOUCH" section is especially important - it shows you exercised scope discipline and didn't go on an unsolicited renovation.
 
 ## Pre-Commit Hygiene
 
@@ -269,19 +269,19 @@ git log --grep="validation" --oneline
 
 ## Release & Versioning
 
-Commits are how *you* track change; a **version** is how your *consumers* track it. The moment anything else depends on your code — another team, a published package, a deployed client — "latest on main" stops being a sufficient answer to "what am I running, and is it safe to upgrade?" A version number and a changelog are the contract that answers it.
+Commits are how *you* track change; a **version** is how your *consumers* track it. The moment anything else depends on your code - another team, a published package, a deployed client - "latest on main" stops being a sufficient answer to "what am I running, and is it safe to upgrade?" A version number and a changelog are the contract that answers it.
 
 ### Semantic Versioning
 
 For anything with consumers, version `MAJOR.MINOR.PATCH` and let the number carry meaning:
 
 ```
-  MAJOR  breaking change — consumers must change their code to upgrade
-  MINOR  new functionality, backward-compatible — safe to upgrade
-  PATCH  bug fix, backward-compatible — safe to upgrade
+  MAJOR  breaking change - consumers must change their code to upgrade
+  MINOR  new functionality, backward-compatible - safe to upgrade
+  PATCH  bug fix, backward-compatible - safe to upgrade
 ```
 
-The number is a promise, so make the code match it. A "patch" that changes behavior consumers relied on is a major change wearing a disguise (Hyrum's Law — see the `api-and-interface-design` skill). When unsure whether a change is breaking, assume it is; a surprise major is far cheaper than a broken consumer.
+The number is a promise, so make the code match it. A "patch" that changes behavior consumers relied on is a major change wearing a disguise (Hyrum's Law - see the `api-and-interface-design` skill). When unsure whether a change is breaking, assume it is; a surprise major is far cheaper than a broken consumer.
 
 ### Tag the release, and let the tag be the source of truth
 
@@ -296,7 +296,7 @@ Derive the version from the tag rather than hand-editing it in scattered files, 
 
 ### Keep a changelog written for humans
 
-A changelog is not `git log`. It's the curated, consumer-facing answer to "what changed and do I care?" — grouped by `Added / Changed / Fixed / Deprecated / Removed / Security`, newest on top, every entry phrased around user impact, not internal mechanics.
+A changelog is not `git log`. It's the curated, consumer-facing answer to "what changed and do I care?" - grouped by `Added / Changed / Fixed / Deprecated / Removed / Security`, newest on top, every entry phrased around user impact, not internal mechanics.
 
 ```markdown
 ## [1.4.0] - 2025-06-12
@@ -305,10 +305,10 @@ A changelog is not `git log`. It's the curated, consumer-facing answer to "what 
 ### Fixed
 - Timezone drift in recurring task due dates
 ### Deprecated
-- `GET /v1/tasks/all` — use the paginated `GET /v1/tasks` (removal in 2.0)
+- `GET /v1/tasks/all` - use the paginated `GET /v1/tasks` (removal in 2.0)
 ```
 
-Write the entry in the same change that makes the change, while the impact is fresh — not reconstructed from commit archaeology at release time. Breaking changes get a migration note and a deprecation window (follow the `deprecation-and-migration` skill); shipping the actual release is the `shipping-and-launch` skill's job — this section is the versioning contract that feeds it.
+Write the entry in the same change that makes the change, while the impact is fresh - not reconstructed from commit archaeology at release time. Breaking changes get a migration note and a deprecation window (follow the `deprecation-and-migration` skill); shipping the actual release is the `shipping-and-launch` skill's job - this section is the versioning contract that feeds it.
 
 ## Common Rationalizations
 
@@ -317,7 +317,7 @@ Write the entry in the same change that makes the change, while the impact is fr
 | "I'll commit when the feature is done" | One giant commit is impossible to review, debug, or revert. Commit each slice. |
 | "The message doesn't matter" | Messages are documentation. Future you (and future agents) will need to understand what changed and why. |
 | "I'll squash it all later" | Squashing destroys the development narrative. Prefer clean incremental commits from the start. |
-| "Branches add overhead" | Short-lived branches are free and prevent conflicting work from colliding. Long-lived branches are the problem — merge within 1-3 days. |
+| "Branches add overhead" | Short-lived branches are free and prevent conflicting work from colliding. Long-lived branches are the problem - merge within 1-3 days. |
 | "I'll split this change later" | Large changes are harder to review, riskier to deploy, and harder to revert. Split before submitting, not after. |
 | "I don't need a .gitignore" | Until `.env` with production secrets gets committed. Set it up immediately. |
 | "It's just a small fix, bump the patch" | Check what consumers can observe. A behavior change they relied on is a major, whatever the diff size. |

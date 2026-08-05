@@ -7,7 +7,7 @@ description: Records decisions and documentation. Use when making architectural 
 
 ## Overview
 
-Document decisions, not just code. The most valuable documentation captures the *why* — the context, constraints, and trade-offs that led to a decision. Code shows *what* was built; documentation explains *why it was built this way* and *what alternatives were considered*. This context is essential for future humans and agents working in the codebase.
+Document decisions, not just code. The most valuable documentation captures the *why* - the context, constraints, and trade-offs that led to a decision. Code shows *what* was built; documentation explains *why it was built this way* and *what alternatives were considered*. This context is essential for future humans and agents working in the codebase.
 
 ## When to Use
 
@@ -35,17 +35,17 @@ ADRs capture the reasoning behind significant technical decisions. They're the h
 
 ### Match the existing convention first
 
-Before creating an ADR, inspect the available repository context for an established convention — existing ADRs, project instructions, and ADR-related configuration or tooling (e.g. an `.adr-dir` file). An established convention overrides the defaults below. Match:
+Before creating an ADR, inspect the available repository context for an established convention - existing ADRs, project instructions, and ADR-related configuration or tooling (e.g. an `.adr-dir` file). An established convention overrides the defaults below. Match:
 
-- **Location and format** — e.g. `docs/adr/*.md`, `Documentation/Decisions/*.rst`, a MADR layout, or an `adr-tools` setup. Match the existing directory, file extension, and markup (Markdown vs reStructuredText).
-- **Numbering and naming** — continue the existing sequence and filename pattern (`ADR-004-Title.rst`, `0004-title.md`, …); don't restart at 001 or introduce a second scheme.
-- **Section headings** — reuse the project's heading set rather than imposing this template's.
+- **Location and format** - e.g. `docs/adr/*.md`, `Documentation/Decisions/*.rst`, a MADR layout, or an `adr-tools` setup. Match the existing directory, file extension, and markup (Markdown vs reStructuredText).
+- **Numbering and naming** - continue the existing sequence and filename pattern (`ADR-004-Title.rst`, `0004-title.md`, …); don't restart at 001 or introduce a second scheme.
+- **Section headings** - reuse the project's heading set rather than imposing this template's.
 
 If the available evidence conflicts, surface the conflict rather than silently introducing another scheme. Only when no convention can be established do you apply the default below.
 
 ### ADR Template
 
-Store ADRs in `docs/decisions/` with sequential numbering (unless the project already uses another location — see above):
+Store ADRs in `docs/decisions/` with sequential numbering (unless the project already uses another location - see above):
 
 ```markdown
 # ADR-001: Use PostgreSQL for primary database
@@ -111,7 +111,7 @@ Comment the *why*, not the *what*:
 counter += 1;
 
 // GOOD: Explains non-obvious intent
-// Rate limit uses a sliding window — reset counter at window boundary,
+// Rate limit uses a sliding window - reset counter at window boundary,
 // not on a fixed schedule, to prevent burst attacks at window edges
 if (now - windowStart > WINDOW_SIZE_MS) {
   counter = 0;
@@ -251,10 +251,10 @@ For shipped features:
 
 Special consideration for AI agent context:
 
-- **CLAUDE.md / rules files** — Document project conventions so agents follow them
-- **Spec files** — Keep specs updated so agents build the right thing
-- **ADRs** — Help agents understand why past decisions were made (prevents re-deciding)
-- **Inline gotchas** — Prevent agents from falling into known traps
+- **CLAUDE.md / rules files** - Document project conventions so agents follow them
+- **Spec files** - Keep specs updated so agents build the right thing
+- **ADRs** - Help agents understand why past decisions were made (prevents re-deciding)
+- **Inline gotchas** - Prevent agents from falling into known traps
 
 ## Common Rationalizations
 
@@ -264,7 +264,7 @@ Special consideration for AI agent context:
 | "We'll write docs when the API stabilizes" | APIs stabilize faster when you document them. The doc is the first test of the design. |
 | "Nobody reads docs" | Agents do. Future engineers do. Your 3-months-later self does. |
 | "ADRs are overhead" | A 10-minute ADR prevents a 2-hour debate about the same decision six months later. |
-| "Comments get outdated" | Comments on *why* are stable. Comments on *what* get outdated — that's why you only write the former. |
+| "Comments get outdated" | Comments on *why* are stable. Comments on *what* get outdated - that's why you only write the former. |
 
 ## Red Flags
 

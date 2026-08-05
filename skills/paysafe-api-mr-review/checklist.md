@@ -6,7 +6,7 @@ Open it when a trigger fires and you need the exact rule, the severity, or the c
 ## A. Reuse & consistency (highest priority)
 - [ ] Error responses `$ref` the common `Error`
       (`./paysafe-wallet-api-common.yaml#/components/schemas/Error`) with named
-      examples — **not** a locally redefined `Error`/`ErrorDetails`/`FieldError`.
+      examples - **not** a locally redefined `Error`/`ErrorDetails`/`FieldError`.
 - [ ] Reuse `PagingResultMeta`, `Limit`, `Offset`, `Link` from common; reuse domain
       schemas from `paysafe-wallet-api.yaml` / `paysafe-wallet-user-api.yaml` before
       adding new ones.
@@ -27,12 +27,12 @@ Open it when a trigger fires and you need the exact rule, the severity, or the c
       docs entry goes to **📋 After merge**, not to 🔴.
       Applies to public and internal specs. _(ref: reference.md §Published error codes)_
 - [ ] Lists use `{ <items>: [...], meta: PagingResultMeta }` with `limit`/`offset`
-      params from common — no cursor/pageToken (not used here).
+      params from common - no cursor/pageToken (not used here).
 - [ ] Shared headers/params (`Signature`, `Authorization`, `Idempotency-Key`) reused,
       not re-inlined with a divergent shape.
 - [ ] Common wallet SDK headers (`User-Agent`, `Paysafe-Wallet-Version`,
       `Paysafe-Wallet-Platform`, `Partner-Application-Version`) are **mandatory, always
-      present, and defined centrally — not declared per operation**. Never flag their
+      present, and defined centrally - not declared per operation**. Never flag their
       absence as a parameter, nor flag a field / `provider` derived from them as
       "undocumented input" (reference.md §Common platform headers).
 
@@ -52,7 +52,7 @@ Open it when a trigger fires and you need the exact rule, the severity, or the c
       `writeOnly` for secrets (request/response ownership detailed in H).
 - [ ] New fields carry constraints where meaningful (`minLength`/`maxLength`,
       `pattern`, `example`).
-- [ ] Removing/renaming a field or tightening a type is a breaking change — flag it and
+- [ ] Removing/renaming a field or tightening a type is a breaking change - flag it and
       defer to the oasdiff gate; prefer `deprecated: true` over deletion.
 - [ ] **Polymorphism uses the canonical shape. `oneOf` + `discriminator` + a *shared*
       enum on every variant is CORRECT; never flag it.** The Java generator needs one
@@ -96,28 +96,28 @@ Open it when a trigger fires and you need the exact rule, the severity, or the c
 ## E. Documentation
 - [ ] Operations have `summary` + `description`; new schemas/fields are described.
 - [ ] Descriptions convey **business purpose**, flow role, covered scenarios, and
-      behavioural contract (idempotency / side effects) — not a restatement of
+      behavioural contract (idempotency / side effects) - not a restatement of
       already-visible field names/types. Match reference.md §Description quality; flag a new
       public op shipping only a `summary` or a name-echoing description.
 - [ ] **Identifiers and literals in descriptions use markdown code spans.** Wrap schema /
       field / op / path names, status codes, error codes, and closed-set / enum values in
-      backticks so portals render them as code — e.g. ``Supported values: `en`, `es`, `de`.``
+      backticks so portals render them as code - e.g. ``Supported values: `en`, `es`, `de`.``
       not bare `en, es, de`. Do **not** backtick ordinary prose. Prefer a schema `enum` as
       the contract; if prose also lists values, they must match the `enum` (see G / H).
       Missing backticks → 🟢; prose values ≠ schema → escalate under G/H.
       _(ref: reference.md §Description quality)_
 - [ ] Examples are named `UPPER_SNAKE`; no secrets/PII in examples.
 
-## F. Examples — conformance, coverage & correctness (high-value; easy to miss)
+## F. Examples - conformance, coverage & correctness (high-value; easy to miss)
 _All findings in F cite reference.md §Examples: conformance & coverage._
 - [ ] **Example ↔ schema conformance (both directions).** Every example is a valid
-      instance of its schema — no keys forbidden by `additionalProperties: false`, all
-      `required` present, correct types — **and** every field the schema defines is
+      instance of its schema - no keys forbidden by `additionalProperties: false`, all
+      `required` present, correct types - **and** every field the schema defines is
       reflected in its examples. Adding/renaming/removing a schema field updates every
       example in lockstep: important new fields appear in ≥1 example, renamed keys are
       renamed, removed keys are purged from request *and* response examples. No example key
       lacks a matching schema property; no schema field is silently absent from all examples.
-- [ ] **`example`, `default` and named-example values satisfy every constraint** — each
+- [ ] **`example`, `default` and named-example values satisfy every constraint** - each
       value is a member of the field's `enum`, matches its `format` (`date-time` UTC `Z`,
       `uuid`, `int64` money in minor units), satisfies `pattern`, and respects
       `minLength`/`maxLength`, `minimum`/`maximum`, `minItems`/`maxItems`. A property-level
@@ -129,13 +129,13 @@ _All findings in F cite reference.md §Examples: conformance & coverage._
       `readOnly` fields (status, timestamps, generated ids) stay coherent, and a paired
       request ↔ `2xx` example tells one story (no `USD` request answered by a `EUR`
       response).
-- [ ] **Response examples cover the important scenarios — sparingly.** Every response with
+- [ ] **Response examples cover the important scenarios - sparingly.** Every response with
       a body has ≥1 named example for the primary (happy-path) outcome; default to **1-2
-      per response**. Add a **third+ only for a concrete business need** — genuinely
+      per response**. Add a **third+ only for a concrete business need** - genuinely
       distinct outcomes a consumer handles differently (each `oneOf`/polymorphic variant,
       or distinct error `code`s under one status). Flag over-provisioning: near-duplicate
       examples differing only trivially (a name, a timestamp) collapse to one.
-- [ ] Example **data is coherent** — `sender.role`/author match the content, ids and
+- [ ] Example **data is coherent** - `sender.role`/author match the content, ids and
       timestamps are plausible, no copy-paste slips (a customer line tagged `role: AGENT`).
 - [ ] **Error examples name only real inputs.** In a `4xx` example, every
       `error.fieldErrors[].field` (and any field named in `error.details`/`message`) must
@@ -143,42 +143,42 @@ _All findings in F cite reference.md §Examples: conformance & coverage._
       request never defines is a 🔴 bug. Each `error.code` must also be returnable for that
       input. Whether the code is **published** is handled in A: reuse → ♻️, bad name → 🔴,
       good name but missing from the docs page → 📋.
-- [ ] Examples on a **response reused across operations** are valid for *each* op — a
+- [ ] Examples on a **response reused across operations** are valid for *each* op - a
       terminal/"end" op reusing a generic `200` must not offer non-terminal states as
       outcomes; give it a dedicated response/examples when the shared set is wrong.
 - [ ] Idempotent-replay notes/examples reflect the resource's **actual** state, not a
       hardcoded one (don't pin a single `endReason`/`status` for every replay).
 
 ## G. Documentation & spec drift
-- [ ] `info.description` and field/op descriptions **match what the spec implements** — no
+- [ ] `info.description` and field/op descriptions **match what the spec implements** - no
       aspirational or copied-in features (tokens, file uploads) with no backing path; no
       stale wording ("applied when creating" on a now server-derived field).
-- [ ] Descriptions are **complete** — finish behaviour/idempotency notes with the
+- [ ] Descriptions are **complete** - finish behaviour/idempotency notes with the
       consequence (e.g. "…else returns `409`, see `ConversationConflict`"); no dangling
       sentences.
-- [ ] Drop "values are examples" on a closed `enum` — the enum *is* the contract. A prose
+- [ ] Drop "values are examples" on a closed `enum` - the enum *is* the contract. A prose
       "supported values" list must match the schema `enum`/`pattern` exactly (and use
       backticks per E); do not invent a second, divergent list.
 
 ## H. Completeness & lifecycle
-- [ ] **Status-code parity** — every code named in a description exists in that op's
+- [ ] **Status-code parity** - every code named in a description exists in that op's
       `responses` and vice-versa; the `500`/`503` family used elsewhere is present on all
       non-trivial ops.
-- [ ] **No unreachable declarations** — every error `code`/example and every schema is
+- [ ] **No unreachable declarations** - every error `code`/example and every schema is
       reachable from ≥1 operation (a defined `409` error must be wired to the op that can
       conflict, e.g. sending to an already-ended resource).
-- [ ] **Request vs response ownership** — server-owned fields (identity, timestamps,
+- [ ] **Request vs response ownership** - server-owned fields (identity, timestamps,
       status, derived context) are excluded from request schemas *and* examples, and
       marked `readOnly` on the resource.
-- [ ] **Cross-operation required-ness** — a field `required` on a shared resource must be
+- [ ] **Cross-operation required-ness** - a field `required` on a shared resource must be
       guaranteed by every producer; don't require on the response what's optional/absent
       on create.
-- [ ] **Closed sets constrained** — a fixed value list (language, etc.) uses
+- [ ] **Closed sets constrained** - a fixed value list (language, etc.) uses
       `enum`/`pattern`, not prose only; enum membership is complete and sensible (a
       `SYSTEM_ENDED` reason implies a `SYSTEM` actor; question odd pairs like
       `[NONE, STANDARD]`).
-- [ ] **Collections bounded** — client-supplied arrays carry `minItems`/`maxItems`.
-- [ ] **Terminal-state inputs are safe** — an endpoint that drives a resource to a
+- [ ] **Collections bounded** - client-supplied arrays carry `minItems`/`maxItems`.
+- [ ] **Terminal-state inputs are safe** - an endpoint that drives a resource to a
       terminal state accepts only that target (`status: [ENDED]`), not the full lifecycle
       enum.
 
@@ -205,7 +205,7 @@ rg -n -A20 "^\s{4}<NewSchema>:" apis/<file>.yaml
 
 If an equivalent exists → **♻️ Reuse**; cite the exact `$ref` or error code.
 
-## Published error codes (Step 4b — MUST when codes or error examples change)
+## Published error codes (Step 4b - MUST when codes or error examples change)
 
 Embedded Wallet is a SaaS product: clients integrate against **published** error codes, not
 ad-hoc strings. Canonical list:
@@ -215,7 +215,7 @@ https://docs.paysafe.com/docs/embedded-wallets/error-handling
 When the change set adds or edits any `error.code` (in examples, named error examples, or
 response descriptions), **fetch that page** and apply the decision tree in
 [reference.md](reference.md) §Published error codes. Do **not** treat
-[reuse-catalog.md](reuse-catalog.md) alone as complete — it is a high-frequency shortcut;
+[reuse-catalog.md](reuse-catalog.md) alone as complete - it is a high-frequency shortcut;
 the docs page is the source of truth.
 
 Check **new/changed** codes only; do not churn legacy codes in untouched examples.

@@ -24,7 +24,7 @@ report), leaving the branch exactly as it was.
   `gradle.properties` conflicts on a non-`version` line (e.g. `group`, `description`). Do
   not attempt resolution; restore the branch and tell the user which files conflicted.
 
-## Preconditions — stop and report if any fail
+## Preconditions - stop and report if any fail
 
 - Working tree clean: `git status --porcelain` is empty (never risk losing uncommitted work).
 - On a real feature branch: not `master`, not detached HEAD.
@@ -103,7 +103,7 @@ Write both files with the file tools, fully overwriting the conflict-marked vers
 
 - `gradle.properties`: start from `git show origin/master:gradle.properties`, and set only
   its `version` line to `version = <NEW_VER>`. Keep every other line from master.
-- `CHANGELOG.md`: assemble as below — branch block renumbered to `NEW_VER` on top, then
+- `CHANGELOG.md`: assemble as below - branch block renumbered to `NEW_VER` on top, then
   master's full body. Exactly one blank line between the header and the first block and
   between blocks; no conflict markers remain.
 

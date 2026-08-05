@@ -21,12 +21,12 @@ Official links (cleaned from the Cursor team's session), plus learning paths and
 - **Workshops (101, 201, ...):** https://cursor.com/workshops
 
 ## Suggested learning path (for dummies → confident)
-1. **Modes** — do Ask → Plan → Agent on one real task. (`references/cursor-modes.md`)
-2. **Models** — try the same task with the fast default vs a high-reasoning model; feel the difference. (`references/cursor-models.md`)
-3. **Working at scale** — add a small rules file + enable indexing on a real repo. (`references/cursor-working-at-scale.md`)
-4. **Review** — turn on Bugbot for one repo; open a PR and read its comments. (`references/cursor-code-review.md`)
-5. **Cloud agents** — delegate one self-contained ticket and let it open a PR. (`references/cursor-cloud-agents.md`)
-6. **Profiling** — profile one slow path and run the measure→change→measure loop. (`references/cursor-profiling.md`)
+1. **Modes** - do Ask → Plan → Agent on one real task. (`references/cursor-modes.md`)
+2. **Models** - try the same task with the fast default vs a high-reasoning model; feel the difference. (`references/cursor-models.md`)
+3. **Working at scale** - add a small rules file + enable indexing on a real repo. (`references/cursor-working-at-scale.md`)
+4. **Review** - turn on Bugbot for one repo; open a PR and read its comments. (`references/cursor-code-review.md`)
+5. **Cloud agents** - delegate one self-contained ticket and let it open a PR. (`references/cursor-cloud-agents.md`)
+6. **Profiling** - profile one slow path and run the measure→change→measure loop. (`references/cursor-profiling.md`)
 7. Do a **Workshop** (101 then 201) to reinforce.
 
 ## Key takeaways (one screen)

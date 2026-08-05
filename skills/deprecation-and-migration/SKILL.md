@@ -7,7 +7,7 @@ description: Manages deprecation and migration. Use when removing old systems, A
 
 ## Overview
 
-Code is a liability, not an asset. Every line of code has ongoing maintenance cost — bugs to fix, dependencies to update, security patches to apply, and new engineers to onboard. Deprecation is the discipline of removing code that no longer earns its keep, and migration is the process of moving users safely from the old to the new.
+Code is a liability, not an asset. Every line of code has ongoing maintenance cost - bugs to fix, dependencies to update, security patches to apply, and new engineers to onboard. Deprecation is the discipline of removing code that no longer earns its keep, and migration is the process of moving users safely from the old to the new.
 
 Most engineering organizations are good at building things. Few are good at removing them. This skill addresses that gap.
 
@@ -24,11 +24,11 @@ Most engineering organizations are good at building things. Few are good at remo
 
 ### Code Is a Liability
 
-Every line of code has ongoing cost: it needs tests, documentation, security patches, dependency updates, and mental overhead for anyone working nearby. The value of code is the functionality it provides, not the code itself. When the same functionality can be provided with less code, less complexity, or better abstractions — the old code should go.
+Every line of code has ongoing cost: it needs tests, documentation, security patches, dependency updates, and mental overhead for anyone working nearby. The value of code is the functionality it provides, not the code itself. When the same functionality can be provided with less code, less complexity, or better abstractions - the old code should go.
 
 ### Hyrum's Law Makes Removal Hard
 
-With enough users, every observable behavior becomes depended on — including bugs, timing quirks, and undocumented side effects. This is why deprecation requires active migration, not just announcement. Users can't "just switch" when they depend on behaviors the replacement doesn't replicate.
+With enough users, every observable behavior becomes depended on - including bugs, timing quirks, and undocumented side effects. This is why deprecation requires active migration, not just announcement. Users can't "just switch" when they depend on behaviors the replacement doesn't replicate.
 
 ### Deprecation Planning Starts at Design Time
 
@@ -62,7 +62,7 @@ Before deprecating anything, answer these questions:
 | **Advisory** | Migration is optional, old system is stable | Warnings, documentation, nudges. Users migrate on their own timeline. |
 | **Compulsory** | Old system has security issues, blocks progress, or maintenance cost is unsustainable | Hard deadline. Old system will be removed by date X. Provide migration tooling. |
 
-**Default to advisory.** Use compulsory only when the maintenance cost or risk justifies forcing migration. Compulsory deprecation requires providing migration tooling, documentation, and support — you can't just announce a deadline.
+**Default to advisory.** Use compulsory only when the maintenance cost or risk justifies forcing migration. Compulsory deprecation requires providing migration tooling, documentation, and support - you can't just announce a deadline.
 
 ## The Migration Process
 
@@ -81,7 +81,7 @@ Don't deprecate without a working alternative. The replacement must:
 
 **Status:** Deprecated as of 2025-03-01
 **Replacement:** NewService (see migration guide below)
-**Removal date:** Advisory — no hard deadline yet
+**Removal date:** Advisory - no hard deadline yet
 **Reason:** OldService requires manual scaling and lacks observability.
             NewService handles both automatically.
 
@@ -103,7 +103,7 @@ Migrate consumers one at a time, not all at once. For each consumer:
 5. Confirm no regressions
 ```
 
-**The Churn Rule:** If you own the infrastructure being deprecated, you are responsible for migrating your users — or providing backward-compatible updates that require no migration. Don't announce deprecation and leave users to figure it out.
+**The Churn Rule:** If you own the infrastructure being deprecated, you are responsible for migrating your users - or providing backward-compatible updates that require no migration. Don't announce deprecation and leave users to figure it out.
 
 ### Step 4: Remove the Old System
 
@@ -114,7 +114,7 @@ Only after all consumers have migrated:
 2. Remove the code
 3. Remove associated tests, documentation, and configuration
 4. Remove the deprecation notices
-5. Celebrate — removing code is an achievement
+5. Celebrate - removing code is an achievement
 ```
 
 ## Migration Patterns
@@ -163,7 +163,7 @@ function getTaskService(userId: string): TaskService {
 
 ### Database Schema Migrations (Expand/Contract)
 
-A schema change is the riskiest migration because the data is the one thing you cannot roll back by reverting a deploy. The failure mode is coupling the schema change to the code change: rename a column in the same release that starts using the new name, and during the rollout window — when old and new code run at once — one of them is querying a column that doesn't exist. The fix is to **never change a column in place**. Migrate in additive phases so old and new code are both valid at every step.
+A schema change is the riskiest migration because the data is the one thing you cannot roll back by reverting a deploy. The failure mode is coupling the schema change to the code change: rename a column in the same release that starts using the new name, and during the rollout window - when old and new code run at once - one of them is querying a column that doesn't exist. The fix is to **never change a column in place**. Migrate in additive phases so old and new code are both valid at every step.
 
 ```
 EXPAND ──────────────→ MIGRATE ──────────────→ CONTRACT
@@ -172,15 +172,15 @@ nullable, alongside    dual-write old+new from  old column, drop it in
 the old one            the app                  a later, separate deploy
 ```
 
-**Worked example — renaming `name` to `full_name`:**
+**Worked example - renaming `name` to `full_name`:**
 
 1. **Expand.** Add `full_name` as nullable. Deploy. (Old code ignores it; nothing breaks.)
 2. **Dual-write.** App writes both `name` and `full_name` on every insert/update. Deploy.
 3. **Backfill.** Copy `name → full_name` for existing rows, in batches, so you don't lock the table.
 4. **Switch reads.** Point the app at `full_name`, keep writing both. Deploy and bake.
-5. **Contract.** Stop writing `name`, then — in a *separate, later* deploy — drop the column.
+5. **Contract.** Stop writing `name`, then - in a *separate, later* deploy - drop the column.
 
-Each step is independently deployable and reversible: if step 4 misbehaves, roll the code back and `full_name` is still being populated. Treat each phase as a thin vertical slice — see the `incremental-implementation` skill.
+Each step is independently deployable and reversible: if step 4 misbehaves, roll the code back and `full_name` is still being populated. Treat each phase as a thin vertical slice - see the `incremental-implementation` skill.
 
 **Rules:**
 - **Additive first, destructive last and alone.** Adds (new nullable column, new table, new index) are safe in any deploy; drops and renames get their own deploy *after* no code references the old shape.
@@ -199,7 +199,7 @@ Zombie code is code that nobody owns but everybody depends on. It's not actively
 - Dependencies with known vulnerabilities that nobody updates
 - Documentation that references systems that no longer exist
 
-**Response:** Either assign an owner and maintain it properly, or deprecate it with a concrete migration plan. Zombie code cannot stay in limbo — it either gets investment or removal.
+**Response:** Either assign an owner and maintain it properly, or deprecate it with a concrete migration plan. Zombie code cannot stay in limbo - it either gets investment or removal.
 
 ## Common Rationalizations
 
@@ -209,9 +209,9 @@ Zombie code is code that nobody owns but everybody depends on. It's not actively
 | "Someone might need it later" | If it's needed later, it can be rebuilt. Keeping unused code "just in case" costs more than rebuilding. |
 | "The migration is too expensive" | Compare migration cost to ongoing maintenance cost over 2-3 years. Migration is usually cheaper long-term. |
 | "We'll deprecate it after we finish the new system" | Deprecation planning starts at design time. By the time the new system is done, you'll have new priorities. Plan now. |
-| "Users will migrate on their own" | They won't. Provide tooling, documentation, and incentives — or do the migration yourself (the Churn Rule). |
+| "Users will migrate on their own" | They won't. Provide tooling, documentation, and incentives - or do the migration yourself (the Churn Rule). |
 | "We can maintain both systems indefinitely" | Two systems doing the same thing is double the maintenance, testing, documentation, and onboarding cost. |
-| "Just rename the column, it's one line" | During the rollout, old and new code run together — one will query a column that no longer exists. Expand/contract, never rename in place. |
+| "Just rename the column, it's one line" | During the rollout, old and new code run together - one will query a column that no longer exists. Expand/contract, never rename in place. |
 | "I'll add the column and drop the old one in the same migration" | That couples a safe add to a destructive drop. Drops get their own deploy, after no code references the old shape. |
 | "We'll write the rollback if we need it" | A migration with no down path is a deploy you can't reverse. Write and run the `down` before merging. |
 

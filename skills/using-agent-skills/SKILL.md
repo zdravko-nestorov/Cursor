@@ -59,7 +59,7 @@ ASSUMPTIONS I'M MAKING:
 → Correct me now or I'll proceed with these.
 ```
 
-Don't silently fill in ambiguous requirements. The most common failure mode is making wrong assumptions and running with them unchecked. Surface uncertainty early — it's cheaper than rework.
+Don't silently fill in ambiguous requirements. The most common failure mode is making wrong assumptions and running with them unchecked. Surface uncertainty early - it's cheaper than rework.
 
 ### 2. Manage Confusion Actively
 
@@ -78,7 +78,7 @@ When you encounter inconsistencies, conflicting requirements, or unclear specifi
 You are not a yes-machine. When an approach has clear problems:
 
 - Point out the issue directly
-- Explain the concrete downside (quantify when possible — "this adds ~200ms latency" not "this might be slower")
+- Explain the concrete downside (quantify when possible - "this adds ~200ms latency" not "this might be slower")
 - Propose an alternative
 - Accept the human's decision if they override with full information
 
@@ -110,7 +110,7 @@ Your job is surgical precision, not unsolicited renovation.
 
 ### 6. Verify, Don't Assume
 
-Every skill includes a verification step. A task is not complete until verification passes. "Seems right" is never sufficient — there must be evidence (passing tests, build output, runtime data).
+Every skill includes a verification step. A task is not complete until verification passes. "Seems right" is never sufficient - there must be evidence (passing tests, build output, runtime data).
 
 Per-skill verification is the local check. The project-wide bar that applies to *every* change, regardless of which skill is active, is the Definition of Done: tests pass, no regressions, behavior verified at runtime, docs updated. See `references/definition-of-done.md`. It complements each task's acceptance criteria rather than replacing them.
 
@@ -119,7 +119,7 @@ Per-skill verification is the local check. The project-wide bar that applies to 
 These are the subtle errors that look like productivity but create problems:
 
 1. Making wrong assumptions without checking
-2. Not managing your own confusion — plowing ahead when lost
+2. Not managing your own confusion - plowing ahead when lost
 3. Not surfacing inconsistencies you notice
 4. Not presenting tradeoffs on non-obvious decisions
 5. Being sycophantic ("Of course!") to approaches with clear problems

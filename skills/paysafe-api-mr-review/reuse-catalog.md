@@ -3,7 +3,7 @@
 Before adding a **schema, field, parameter, response, or error code**, find and reuse
 what already exists. This is the #1 review priority. Pair the discovery recipes in
 `SKILL.md` (Step 4) with the tables below. Frequencies are from `apis/` and indicate the
-dominant (canonical) choice; "avoid" entries are real drift seen in the repo — don't
+dominant (canonical) choice; "avoid" entries are real drift seen in the repo - don't
 propagate them.
 
 ## Reusable components (reuse before defining)
@@ -31,21 +31,21 @@ propagate them.
 | Profile / instrument / deposit models | (various) | `paysafe-wallet-user-api.yaml` |
 
 `$ref` these cross-file instead of copying. Internal/v2 specs already compose user-api
-fragments via `allOf` — follow that pattern.
+fragments via `allOf` - follow that pattern.
 
 ## Canonical field lexicon
 
 | Concept | Canonical field | Type / format | Reuse | Avoid (drift) |
 |---------|-----------------|---------------|-------|---------------|
-| money amount | `amount` | `integer`, `format: int64`, **minor units** | — | `type: number` (~12×), decimal strings |
+| money amount | `amount` | `integer`, `format: int64`, **minor units** | - | `type: number` (~12×), decimal strings |
 | currency | `currencyCode` (582×) | string ISO 4217 | `$ref Currency` | bare `currency` (225×) except a nested `FxAmount.currency` object |
 | country | `countryCode` (90×) | string ISO-3166 alpha-2 | `$ref CountryCode` | bare `country` (41×) |
-| entity id | `<entity>Id` | string (often `maxLength` 20/40) | — | ad-hoc names, snake_case |
-| — examples | `customerId`, `accountId`, `walletId`, `instrumentId`, `cardId`, `externalId`, `merchantId` | | | |
-| uuid | keep `<entity>Id`; add `format: uuid` **only** when strictly a UUID (28× total) | string `uuid` | — | blanket `format: uuid` on all ids |
+| entity id | `<entity>Id` | string (often `maxLength` 20/40) | - | ad-hoc names, snake_case |
+| - examples | `customerId`, `accountId`, `walletId`, `instrumentId`, `cardId`, `externalId`, `merchantId` | | | |
+| uuid | keep `<entity>Id`; add `format: uuid` **only** when strictly a UUID (28× total) | string `uuid` | - | blanket `format: uuid` on all ids |
 | timestamp | see note | string, `format: date-time` (UTC `Z`) | `SaasTimestamp` | inventing a 5th name |
 
-**Timestamp note:** naming is genuinely inconsistent in the repo — `timestamp` (66×),
+**Timestamp note:** naming is genuinely inconsistent in the repo - `timestamp` (66×),
 `createdDate` (36×), `createdAt` (36×), `updatedTime` (25×). There is **no** single
 winner. The invariant is `format: date-time`. Match the name already used in the same
 spec/domain; do not add a new variant.
@@ -56,11 +56,11 @@ spec/domain; do not add a new variant.
 
 https://docs.paysafe.com/docs/embedded-wallets/error-handling
 
-This table is a **high-frequency shortcut only** — incomplete vs the live docs. Always
+This table is a **high-frequency shortcut only** - incomplete vs the live docs. Always
 fetch the docs page when the MR touches error examples/codes (see reference.md
 §Published error codes).
 
-**Canonical style for NEW codes:** `DW-<DOMAIN>-<REASON>` — UPPER case, hyphen-separated.
+**Canonical style for NEW codes:** `DW-<DOMAIN>-<REASON>` - UPPER case, hyphen-separated.
 Reuse a **published** code when one already means the same thing (♻️). A wrong-style name
 is a 🔴 blocker. A correctly named new code still needs a docs row (HTTP status + code +
 message), but that is a **📋 After merge** task and does not block the merge.
@@ -77,19 +77,19 @@ Reusable high-frequency codes (confirm still listed on the docs page):
 | 429 | `DW-TOO-MANY-REQUESTS` |
 | domain | `DW-INSUFFICIENT-FUNDS`, `DW-<X>-LIMIT-EXCEEDED` |
 
-**Legacy — do not mint new ones** (reuse only if already published / already in the op):
+**Legacy - do not mint new ones** (reuse only if already published / already in the op):
 numeric Paysafe codes `5269`, `5068`, `5279`, `5270`, `5275`, `1200`, `1000`, `5285`.
 
 **Avoid / flag as drift for NEW codes:**
 - Underscore `DW_...` (e.g. `DW_CUSTOMER_CURRENCY_NOT_SUPPORTED`) duplicates the hyphen
   form `DW-CUSTOMER-CURRENCY-NOT-SUPPORTED`. Use hyphens.
 - Bare `UPPER_SNAKE` (`TRANSFER_LIMIT_EXCEEDED`, `INSUFFICIENT_FUNDS`,
-  `MOBILE_NUMBER_ALREADY_EXISTS`) — prefer the published `DW-` form when one exists.
+  `MOBILE_NUMBER_ALREADY_EXISTS`) - prefer the published `DW-` form when one exists.
 - Example placeholders are not codes: `VOUCHER-ABC123`, `VPS`, `MYAGENT3`, raw hashes.
 - Do not invent a twin of a code already on the Error Handling page.
 
 **Do not conflate:** `Transaction Failure Status Reason` codes on the same docs page are
-for `statusReason` / async failure — not HTTP `error.code` unless the operation truly
+for `statusReason` / async failure - not HTTP `error.code` unless the operation truly
 returns that value as `error.code`.
 
 ## Duplication heuristic (when is it a duplicate → ♻️ Reuse)
