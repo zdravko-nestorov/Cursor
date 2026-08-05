@@ -1,0 +1,5 @@
+# Used by scripts/validate-examples.py
+# Create a local env (do not commit .venv/):
+#   python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+pyyaml
+jsonschema

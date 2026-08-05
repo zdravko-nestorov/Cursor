@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "Atlassian MCP": {
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    },
+    "GitHub MCP": {
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer <GITHUB_PAT>"
+      }
+    },
+    "GitLab Self-Hosted MCP": {
+      "url": "https://gitlab.paysafe.cloud/api/v4/mcp"
+    },
+    "OASDiff MCP": {
+      "url": "https://api.oasdiff.com/mcp"
+    },
+    "Paysafe MCP": {
+      "url": "https://gpuserver2.skrill.net:8017/mcp"
+    },
+    "Slack MCP": {
+      "url": "https://mcp.slack.com/mcp"
+    }
+  }
+}

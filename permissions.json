@@ -1,0 +1,26 @@
+{
+  "autoRun": {
+    "allow_instructions": [
+      "Default to allowing. If a call only reads, inspects, searches, builds, generates or tests, run it without asking.",
+      "Allow any write that stays inside the current workspace, inside /tmp, or inside a build cache such as ~/.gradle, ~/.m2, ~/.npm or ~/.cache.",
+      "Allow the read and inspect surface of git: fetch, clone, diff, log, show, status, blame, shortlog, describe, rev-parse, symbolic-ref, remote listing, branch listing, ls-tree, ls-files, cat-file, stash list, and worktree add or remove.",
+      "Allow git checkout and git switch, including detached checkouts of a specific commit, because they only move the working tree.",
+      "Allow build, test and code generation tools to run and to write their own output: gradle, maven, npm, pnpm, yarn, pip, python, node, go and cargo.",
+      "Allow deleting generated or scratch output, such as a src/generated directory, a build directory, or anything under /tmp.",
+      "Allow read-only calls to the GitLab, Jira, Confluence, Slack and OASDiff MCP servers, and read-only web fetches.",
+      "Prefer running the command over asking. Only stop when the call matches one of the block instructions."
+    ],
+    "block_instructions": [
+      "Require approval for privilege escalation of any kind: sudo, su, doas, sudoedit, or any write to a system path such as /etc, /usr, /bin, /sbin, /Library or /System.",
+      "Require approval for git commands that publish or rewrite history: push, commit, merge, rebase, reset, revert, cherry-pick, filter-branch, am, apply, tag, clean, gc --prune, worktree prune, reflog expire, and any git config that writes a value.",
+      "Require approval for deleting a branch or a remote, and for any push that force-updates a ref.",
+      "Require approval for deleting anything outside /tmp and outside a generated-output directory. Never run rm -rf against a home directory, a repository root, the filesystem root, or a path built from a variable that may be unset.",
+      "Require approval for changing ownership or permissions: chmod, chown, chgrp, xattr, or removing a quarantine flag.",
+      "Require approval for installing or publishing software outside a project: brew, apt, apt-get, yum, dnf, port, npm publish, npm install -g, pip install outside a virtual environment, gem install, and any command that pipes a download into a shell.",
+      "Require approval for reading or writing credentials and secrets: env, printenv, ~/.ssh, ~/.aws, ~/.gnupg, ~/.netrc, ~/.cursor/mcp.json, .env files, keychain or security commands, private keys, and anything holding an API token.",
+      "Require approval for MCP calls that change remote state: creating, updating or merging a merge request or pull request, posting a comment or note, transitioning or editing an issue, and sending a Slack message.",
+      "Require approval for killing processes, editing shell startup files, scheduling work with cron or launchctl, changing DNS, firewall or network settings, and disabling security tooling.",
+      "Require approval for database and infrastructure changes: dropping or truncating a table, running a migration against a non-local host, terraform apply or destroy, kubectl delete, and docker system prune."
+    ]
+  }
+}

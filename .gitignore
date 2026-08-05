@@ -55,6 +55,9 @@ plugins/
 !references/**
 # Keep this ignore file itself under version control
 !.gitignore
+# Portable agent policy + MCP template (never the live mcp.json with tokens)
+!permissions.json
+!mcp.json.example
 # Ignore macOS Finder metadata anywhere in the tree
 .DS_Store
 # Local Python envs and bytecode under allowlisted skills/
