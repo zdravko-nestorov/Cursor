@@ -72,15 +72,20 @@ compile.
 | Scratch root | `/tmp/paysafe-mr-review/` |
 | MR worktree | `/tmp/paysafe-mr-review/mr-<N>` |
 | Gradle clone | `/tmp/paysafe-mr-review/build` (reused between reviews) |
-| Validator python | `/Users/zdravko.nestorov/.cursor/skills/paysafe-api-mr-review/.venv/bin/python` |
+| Skill root | `$HOME/.cursor/skills/paysafe-api-mr-review` |
+| Validator python | `$HOME/.cursor/skills/paysafe-api-mr-review/.venv/bin/python` |
 
 1. **Keep every scratch artifact under `/tmp/paysafe-mr-review`.** Never write to a
    sibling of the workspace such as `../mr-<N>`.
 2. **`rm -rf src/generated` is the only delete a review needs.** Run it from inside the
    scratch build clone. Drop a worktree with `git worktree remove`, never with `rm`.
 3. **Use the validator's own interpreter.** System `python3` is externally managed and has
-   no `pyyaml` or `jsonschema`. If the virtual environment is gone, rebuild it once with
-   `python3 -m venv <path>` then `<path>/bin/pip install pyyaml jsonschema`.
+   no `pyyaml` or `jsonschema`. The virtual environment is a local cache, not a tracked
+   artifact, so rebuild it whenever it is missing:
+
+   ```bash
+   cd "$HOME/.cursor/skills/paysafe-api-mr-review" && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+   ```
 4. **Read files with the `Read` tool**, including generated Java under `/tmp`. It gives
    line numbers, and it never truncates the way `head` does.
 5. **Never read credentials.** A review never needs a token, because the MCP server is
@@ -114,7 +119,7 @@ Now pick the depth and announce it. Stop here if nothing under `apis/` changed.
 **Call 2 - one shell that does all of the cheap work.** Skip entirely for `quick`.
 
 ```bash
-mkdir -p /tmp/paysafe-mr-review && git worktree add --detach /tmp/paysafe-mr-review/mr-<N> refs/mr/<N> && cd /tmp/paysafe-mr-review/mr-<N> && git diff --stat origin/<T>...HEAD -- apis/ && git diff origin/<T>...HEAD -- apis/ && for f in $(git diff --name-only origin/<T>...HEAD -- apis/); do echo "== $f"; /Users/zdravko.nestorov/.cursor/skills/paysafe-api-mr-review/.venv/bin/python /Users/zdravko.nestorov/.cursor/skills/paysafe-api-mr-review/scripts/validate-examples.py "$f"; done
+SKILL="$HOME/.cursor/skills/paysafe-api-mr-review" && mkdir -p /tmp/paysafe-mr-review && git worktree add --detach /tmp/paysafe-mr-review/mr-<N> refs/mr/<N> && cd /tmp/paysafe-mr-review/mr-<N> && git diff --stat origin/<T>...HEAD -- apis/ && git diff origin/<T>...HEAD -- apis/ && for f in $(git diff --name-only origin/<T>...HEAD -- apis/); do echo "== $f"; "$SKILL/.venv/bin/python" "$SKILL/scripts/validate-examples.py" "$f"; done
 ```
 
 The validator checks every example against its schema, follows cross-file `$ref`s and
