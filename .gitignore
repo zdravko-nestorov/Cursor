@@ -57,4 +57,8 @@ plugins/
 !.gitignore
 # Ignore macOS Finder metadata anywhere in the tree
 .DS_Store
+# Local Python envs and bytecode under allowlisted skills/
+.venv/
+__pycache__/
+*.py[cod]
 # <<< repo scope: config-only <<<

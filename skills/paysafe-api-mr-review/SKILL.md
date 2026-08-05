@@ -1,413 +1,286 @@
 ---
 name: paysafe-api-mr-review
 description: >-
-  Reviews merge requests that change OpenAPI specs in apis/ for this repository,
-  focusing on API design best practices, consistency with the existing specs, reuse of
-  already-defined models, fields, parameters, responses and examples, plus example
-  integrity, schema/example conformance and coverage, documentation/spec drift,
-  contract completeness and lifecycle, and **published error-code transparency**
-  (codes in examples must exist on the official Error Handling docs — reuse before
-  inventing; new codes MUST be documented there).
-  Auto-detects the change set: fetches an MR diff via the GitLab MCP when given an
-  MR URL/ID, otherwise diffs the local branch against its default branch. Complements the
-  CI gates (oasdiff breaking-changes, version/CHANGELOG, review-confirmation) without
-  duplicating them. Use when asked to review, audit, or sanity-check API/spec changes,
-  a merge request, or a branch in paysafe-wallet-saas-api.
+  Reviews merge requests that change OpenAPI specs under apis/ in
+  paysafe-wallet-saas-api. Covers API design, cross-spec consistency, reuse of existing
+  definitions, example integrity, documentation and spec drift, contract completeness,
+  and published error-code transparency. Complements the CI gates without duplicating
+  them. Use when asked to review, audit or sanity-check API or spec changes, a merge
+  request, or a branch in paysafe-wallet-saas-api.
 disable-model-invocation: true
 ---
 
 # Paysafe API MR review
 
 Review OpenAPI spec changes under `apis/` for **design quality**, **cross-spec
-consistency**, and **reuse of existing definitions**. This is the human-judgment
-layer on top of the automated CI gates — it does **not** re-implement them.
+consistency**, and **reuse of existing definitions**. This is the human-judgment layer on
+top of the CI gates; it does not re-implement them.
 
-## Scope
+Detail lives in separate files so this one stays cheap to load. Open them on demand.
 
-**In scope (this skill):**
-- API design best practices (verbs, status codes, resource modelling, constraints).
-- Consistency with conventions already established across the ~26 specs in `apis/`.
-- Reuse: use existing schemas / fields / parameters / responses / examples instead of
-  redefining equivalents.
-- Documentation quality: business-purpose descriptions (not field restatement), summaries,
-  examples.
-- Version-bump **magnitude** — whether the semver increase fits the change (checklist D).
-- **Published error codes (MUST)** — every `error.code` used in changed examples / error
-  responses must be on the official Error Handling docs (or a docs update ships with the
-  change). Reuse before inventing. See checklist A / F and reference.md §Published error
-  codes.
+| File | Open it when |
+|------|--------------|
+| [checklist.md](checklist.md) | Reviewing a spec. Full A-H rules, reuse recipes, error-code decision tree. |
+| [reporting.md](reporting.md) | Writing the report. Writing rules, template, severity guide. |
+| [reference.md](reference.md) | A finding needs a citation, or a convention is unclear. |
+| [reuse-catalog.md](reuse-catalog.md) | Checking whether a component already exists. |
 
-**Out of scope — CI already gates these; mention, never re-run inside a review:**
-- Breaking-change detection → `oasdiff` (`ci/api-breaking-changes/`, OASDiff MCP, or
-  `./gradlew apiBreakingChangesVerification`).
-- Version bump + `CHANGELOG.md` **existence/format** → the `paysafe-semver-version-bump`
-  skill and `./gradlew apiVersionChangelogVerification`. Judging whether the bump
-  **magnitude** fits the change stays in scope — see checklist D.
-- Consumer-team sign-off → the MR's "API Review Confirmation" thread.
+**Out of scope, CI owns these:** breaking-change detection (`oasdiff`), version bump and
+`CHANGELOG.md` *format*, consumer sign-off. Mention them, never re-run them. Judging
+whether the bump *magnitude* fits the change stays in scope.
 
-## Workflow
+## Step 0 - pick a depth and announce it
 
-```
-- [ ] 1. Resolve the change set (local branch, or MR number via GitLab MCP + optional local bridge)
-- [ ] 2. Load conventions → read reference.md
-- [ ] 3. Review each changed spec against the checklist
-- [ ] 4. Reuse-first: grep existing specs before flagging any "new" component
-- [ ] 4b. If error codes / error examples changed → verify against official Error Handling docs (MUST)
-- [ ] 5. Emit the review report (in chat)
-```
+Say the depth in one line before you start, and repeat it in the report header. The user
+overrides by typing `quick`, `standard` or `deep` after the MR number.
 
-### Step 1 — Resolve the change set
+| Depth | Cost | What it does |
+|-------|------|--------------|
+| `quick` | ~20s | MCP diff only, no clone. Design, naming, status codes from the hunks. |
+| `standard` | ~40s | **Default.** Worktree, reuse greps, example validator. No build. |
+| `deep` | ~90s | Standard plus code generation, to inspect the generated Java. |
 
-Two invocation modes; both reduce to "review only what changed under `apis/`".
+Auto-pick from the diff returned in Call 1:
 
-**A. Local branch — invoked inside the repo (primary path).** Diff the working branch
-against the merge-base with the repo's default branch, restricted to `apis/`:
+- **deep** if it touches `oneOf`, `allOf`, `discriminator`, `x-one-of-interface`, an enum
+  shared by variants, adds or deletes a file under `apis/`, or edits `build.gradle`.
+- **quick** if it touches only `description:`, `summary:` or comments.
+- **standard** otherwise.
 
-```bash
-timeout 120 git fetch origin
-# default branch of origin (falls back to master)
-BASE_REF=$(git symbolic-ref -q --short refs/remotes/origin/HEAD || echo origin/master)
-BASE=$(git merge-base "$BASE_REF" HEAD)
-git diff --stat "$BASE"...HEAD -- apis/
-git diff "$BASE"...HEAD -- apis/
-```
+Escalate mid-review if something surprises you, and say why in the report.
 
-**B. MR number (or URL) given → GitLab MCP.** Project is **id `1861`**
-(`paysafe/consumer/embedded-finance/paysafe-wallet-saas-api`). The old `…/core-wallet/…`
-path is **stale** (group renamed) — use the numeric id, or resolve it with `search`
-(`scope: projects`, `search: "paysafe-wallet-saas-api"`) and pick the `embedded-finance`
-hit. `merge_request_iid` is the MR number `N`.
+## Never rebuild what CI already proved
 
-- `get_merge_request` → `{ id: "1861", merge_request_iid: N }` — title, description,
-  `target_branch`, `source_branch`, `diff_refs` (report header + version context).
-- `get_merge_request_diffs` → `{ id: "1861", merge_request_iid: N, per_page: 100 }` — the
-  changed hunks (page through). Added files carry full content; modified files are
-  hunks + context.
+The MR pipeline ran on the same commit. Read job status with `get_pipeline_jobs`, which
+costs 2 seconds against 35 for a local compile.
 
-The GitLab MCP has **no file-read and no working code search** here (`get_file_contents`
-is GitHub-only; `search` `scope: blobs`/`merge_requests` return no data — only `projects`
-scope works). Pick a depth:
+| Job | Hard gate | What green means |
+|-----|-----------|------------------|
+| `build` | yes | Code generation and `compileJava` pass. Do not re-run them. |
+| `api-version-changelog-verification` | yes | A bump and a CHANGELOG entry exist. |
+| `sonarqube-check` | yes | Static analysis passed. |
+| `api-breaking-changes` | **no**, `allow_failure` | **Nothing.** Green here does not mean compatible. |
 
-- **B1 — full review (recommended): bridge to a local clone.** MR head refs exist
-  (`refs/merge-requests/N/head`), so fetch that ref and review at its state in an isolated
-  worktree (leaves your branch untouched):
+Run gradle only to **inspect generated output** (interface shape, `getType()` return type,
+controller signature), or to test a fix **you** propose. Never to re-check the author's
+compile.
 
-```bash
-timeout 120 git fetch origin "refs/merge-requests/N/head"
-git worktree add --detach ../mr-N FETCH_HEAD
-cd ../mr-N
-BASE=$(git merge-base "origin/<target_branch>" HEAD)   # <target_branch> from get_merge_request (usually master)
-git diff --stat "$BASE"...HEAD -- apis/
-git diff "$BASE"...HEAD -- apis/
-# run Step 3/4 (checklist + reuse rg recipes) here, then clean up:
-cd - && git worktree remove ../mr-N
-```
+## Environment
 
-- **B2 — diff-only (no clone): pure MCP.** Review the `get_merge_request_diffs` hunks for
-  everything visible (design, naming, status codes, versioning, and example↔schema when
-  both sit in the hunk). **State the reduced depth in the report:** reuse-first discovery
-  (Step 4) and conformance against *unchanged* schemas/examples aren't possible over MCP —
-  recommend re-running with a clone (B1) for a complete review.
+| Thing | Use this |
+|-------|----------|
+| Scratch root | `/tmp/paysafe-mr-review/` |
+| MR worktree | `/tmp/paysafe-mr-review/mr-<N>` |
+| Gradle clone | `/tmp/paysafe-mr-review/build` (reused between reviews) |
+| Validator python | `/Users/zdravko.nestorov/.cursor/skills/paysafe-api-mr-review/.venv/bin/python` |
 
-If nothing under `apis/` changed, say so and stop.
+1. **Keep every scratch artifact under `/tmp/paysafe-mr-review`.** Never write to a
+   sibling of the workspace such as `../mr-<N>`.
+2. **`rm -rf src/generated` is the only delete a review needs.** Run it from inside the
+   scratch build clone. Drop a worktree with `git worktree remove`, never with `rm`.
+3. **Use the validator's own interpreter.** System `python3` is externally managed and has
+   no `pyyaml` or `jsonschema`. If the virtual environment is gone, rebuild it once with
+   `python3 -m venv <path>` then `<path>/bin/pip install pyyaml jsonschema`.
+4. **Read files with the `Read` tool**, including generated Java under `/tmp`. It gives
+   line numbers, and it never truncates the way `head` does.
+5. **Never read credentials.** A review never needs a token, because the MCP server is
+   already authenticated. `env`, `printenv`, `~/.ssh`, `~/.netrc` and `~/.cursor/mcp.json`
+   are denied globally and will stop to ask the user.
 
-### Step 2 — Load conventions
+## Workflow: five calls, not twenty
 
-Read [reference.md](reference.md) — the grounded catalog of this repo's conventions
-(shared components, error model, naming, data types, security, versioning). Cite it in
-findings so authors can self-serve.
+Latency comes from round trips, so batch aggressively. Project id is **1861**
+(`paysafe/consumer/embedded-finance/paysafe-wallet-saas-api`); the `core-wallet` path is
+stale. `<N>` is the MR number, `<T>` the target branch from `get_merge_request`.
 
-### Step 3 — Review against the checklist
+**The GitLab MCP parameter is `id`, not `project_id`.** Every merge-request, pipeline and
+job tool takes `{"id": "1861", "merge_request_iid": <N>}`, with `merge_request_iid` as an
+**integer**. Passing `project_id` returns `404 Project Not Found`, which looks like a
+missing project but is really a bad argument name. Only `search` and `get_workitem_notes`
+use `project_id`.
 
-Walk each changed operation/schema through the checklist below. For every changed spec,
-also check the **ripple**: if a schema is referenced cross-file
-(`./paysafe-wallet-*.yaml#/components/...`), confirm consumers still line up.
-
-When a diff hunk isn't self-contained — verifying an example against its schema, or an
-`error.fieldErrors[].field` against the request — **resolve the `$ref` and read the full
-operation from disk** (Step 1: the GitLab MCP has no file-read tool, so deep checks need a
-local checkout of the branch / MR source). The diff alone rarely shows the request schema
-an example must match.
-
-Beyond reuse/design, sweep for **example integrity, doc/spec drift, and completeness**
-(checklist F–H) — the class of issue that structural CI (`validateSpec`) does not catch.
-Run the recipes in [reference.md](reference.md) (§Drift & completeness scans) to surface
-candidates mechanically, then confirm by reading.
-
-### Step 4 — Reuse-first discovery (the priority)
-
-Before flagging "define a new X", prove nothing reusable exists — consult
-[reuse-catalog.md](reuse-catalog.md) (component registry, canonical field lexicon,
-error-code registry) and run:
+**Call 1 - three things in parallel.** `get_merge_request`, `get_merge_request_diffs`
+(`per_page: 100`), and this shell:
 
 ```bash
-# existing component by concept (schemas are 4-space-indented PascalCase keys)
-rg -n "^\s{4}[A-Z][A-Za-z0-9]*:" apis/ | rg -i "<concept>"
-# every place a name/concept already appears
-rg -n "<Name|concept>" apis/
-# what common already provides (reuse before adding)
-rg -n "paysafe-wallet-api-common.yaml#" apis/ | sort -u
-# canonical field vs drift (e.g. currencyCode vs bare currency)
-rg -n "currencyCode:|(^|\s)currency:" apis/
-# existing error codes to reuse (DW-<DOMAIN>-<REASON>)
-rg -oN --no-filename "code: '?[A-Za-z0-9][A-Za-z0-9_-]*'?" apis/ | sort -u
-# likely-duplicate schema: eyeball its property set against candidates
-rg -n -A20 "^\s{4}<NewSchema>:" apis/<file>.yaml
+git fetch origin "refs/merge-requests/<N>/head:refs/mr/<N>"
 ```
 
-These recipes need a **local checkout** and run from the repo root — already true when the
-skill is invoked inside your project on the branch. In pure MR mode (URL only, no clone),
-grepping isn't available: use the local bridge (Step 1 · B1), or fall back to the
-[reuse-catalog.md](reuse-catalog.md) registries plus the diff (Step 1 · B2).
+Fetch into a **named local ref**, not bare `FETCH_HEAD`. Any later `git fetch` overwrites
+`FETCH_HEAD`, and the worktree you build from it then points at the wrong commit.
 
-If an equivalent exists → **♻️ Reuse**; cite the exact `$ref` or error code.
+Now pick the depth and announce it. Stop here if nothing under `apis/` changed.
 
-### Step 4b — Published error codes (MUST when codes / error examples change)
+**Call 2 - one shell that does all of the cheap work.** Skip entirely for `quick`.
 
-Embedded Wallet is a SaaS product: clients integrate against **published** error codes, not
-ad-hoc strings. Canonical list:
-
-https://docs.paysafe.com/docs/embedded-wallets/error-handling
-
-When the change set adds or edits any `error.code` (in examples, named error examples, or
-response descriptions), **fetch that page** (`WebFetch` / browser) and apply the decision
-tree in [reference.md](reference.md) §Published error codes. Do **not** treat
-[reuse-catalog.md](reuse-catalog.md) alone as complete — it is a high-frequency shortcut;
-the docs page is the source of truth.
-
-Gate **new/changed** codes only; do not churn every legacy code already in untouched
-examples.
-
-### Step 5 — Emit the report
-
-Output the report (template below) in chat. **The current GitLab MCP has no tool to
-post MR discussion notes** (`create_workitem_note` targets issues/epics, not MRs), so
-deliver findings in chat; the author applies or pastes them.
-
-## Review checklist
-
-### A. Reuse & consistency (highest priority)
-- [ ] Error responses `$ref` the common `Error`
-      (`./paysafe-wallet-api-common.yaml#/components/schemas/Error`) with named
-      examples — **not** a locally redefined `Error`/`ErrorDetails`/`FieldError`.
-- [ ] Reuse `PagingResultMeta`, `Limit`, `Offset`, `Link` from common; reuse domain
-      schemas from `paysafe-wallet-api.yaml` / `paysafe-wallet-user-api.yaml` before
-      adding new ones.
-- [ ] Money = `integer`, minor units, `format: int64`; `currencyCode` (reuse `Currency`,
-      ISO 4217); `countryCode` (ISO-3166 alpha-2). No money as `number`, no bare
-      `currency`/`country`. New field names match the canonical lexicon (reuse-catalog.md).
-- [ ] Timestamps `format: date-time` (UTC `Z`); calendar dates `format: date`; reuse the
-      timestamp field name already used in that spec (don't add a new variant).
-- [ ] **Error codes are published and reused (MUST).** For every new/changed `error.code`
-      in examples or error responses: (1) confirm it appears on
-      [Error Handling](https://docs.paysafe.com/docs/embedded-wallets/error-handling)
-      under the correct table (`HTTP Response Errors` / `Embedded Wallets Errors` — not
-      conflated with `Transaction Failure Status Reason`); (2) if absent, prefer a
-      **published** code with the same semantic → ♻️; (3) if genuinely new → 🔴 until the
-      code uses `DW-<DOMAIN>-<REASON>` (UPPER, hyphens; no new numeric / `UPPER_SNAKE` /
-      `DW_`) **and** a docs update adds HTTP status + code + message to that page (linked
-      docs MR or same change set). Applies to public and internal specs whenever the code
-      ships in an OpenAPI example. _(ref: reference.md §Published error codes)_
-- [ ] Lists use `{ <items>: [...], meta: PagingResultMeta }` with `limit`/`offset`
-      params from common — no cursor/pageToken (not used here).
-- [ ] Shared headers/params (`Signature`, `Authorization`, `Idempotency-Key`) reused,
-      not re-inlined with a divergent shape.
-- [ ] Common wallet SDK headers (`User-Agent`, `Paysafe-Wallet-Version`,
-      `Paysafe-Wallet-Platform`, `Partner-Application-Version`) are **mandatory, always
-      present, and defined centrally — not declared per operation**. Never flag their
-      absence as a parameter, nor flag a field / `provider` derived from them as
-      "undocumented input" (reference.md §Common platform headers).
-
-### B. Naming
-- [ ] Properties `camelCase`; schemas `PascalCase` (`Request`/`Response`/`List`
-      suffixes; never `Dto`); enum values `UPPER_SNAKE_CASE`.
-- [ ] Path params `camelCase` (`{customerId}`); multi-word path segments `kebab-case`.
-- [ ] `operationId` `kebab-case`, unique within the file.
-- [ ] Tags `Title Case` with a description.
-- [ ] Exceptions are intentional only: OAuth/IETF fields (`grant_type`) stay
-      `snake_case` in `auth.yaml`.
-
-### C. Design best practices
-- [ ] Correct HTTP verb + status codes; document the applicable set of
-      400/401/403/404/409/429/500/503 (this repo does not use 422).
-- [ ] `required` vs optional is accurate; `readOnly` for server-generated fields,
-      `writeOnly` for secrets (request/response ownership detailed in H).
-- [ ] New fields carry constraints where meaningful (`minLength`/`maxLength`,
-      `pattern`, `example`).
-- [ ] Removing/renaming a field or tightening a type is a breaking change — flag it and
-      defer to the oasdiff gate; prefer `deprecated: true` over deletion.
-- [ ] Security scheme matches the spec family (Bearer for user/v2, API_KEY/basic for
-      B2B v1, OAuth2 scopes for internal); `security: []` only for intentionally public
-      endpoints.
-- [ ] Public vs internal placement correct: internal surfaces live in `*-internal-*`
-      specs and/or carry `x-internal`.
-
-### D. Versioning & wiring
-- [ ] `info.version` stays `@Version@` unless the spec is intentionally pinned
-      (`payments.yaml`, checkout specs use `'1.0'`).
-- [ ] **Version bump magnitude fits the change** — additive feature → `Y+1,Z=0`;
-      bugfix/doc → `Z+1`; breaking (per oasdiff) → `X+1,Y=0,Z=0`. Confirm `gradle.properties`
-      equals the top `CHANGELOG.md` `### Version` block (+ Jira link, no duplicate). CI
-      checks a bump *exists*; the *magnitude* is human judgment (reference.md §Version bump
-      correctness).
-- [ ] A **new spec file** is wired per README: `apis/`, a `build.gradle` generate task
-      (+ `sourceJar`/`JavaCompile` deps), and a README entry.
-
-### E. Documentation
-- [ ] Operations have `summary` + `description`; new schemas/fields are described.
-- [ ] Descriptions convey **business purpose**, flow role, covered scenarios, and
-      behavioural contract (idempotency / side effects) — not a restatement of
-      already-visible field names/types. Match reference.md §Description quality; flag a new
-      public op shipping only a `summary` or a name-echoing description.
-- [ ] **Identifiers and literals in descriptions use markdown code spans.** Wrap schema /
-      field / op / path names, status codes, error codes, and closed-set / enum values in
-      backticks so portals render them as code — e.g. ``Supported values: `en`, `es`, `de`.``
-      not bare `en, es, de`. Do **not** backtick ordinary prose. Prefer a schema `enum` as
-      the contract; if prose also lists values, they must match the `enum` (see G / H).
-      Missing backticks → 🟢; prose values ≠ schema → escalate under G/H.
-      _(ref: reference.md §Description quality)_
-- [ ] Examples are named `UPPER_SNAKE`; no secrets/PII in examples.
-
-### F. Examples — conformance, coverage & correctness (high-value; easy to miss)
-_All findings in F cite reference.md §Examples: conformance & coverage._
-- [ ] **Example ↔ schema conformance (both directions).** Every example is a valid
-      instance of its schema — no keys forbidden by `additionalProperties: false`, all
-      `required` present, correct types — **and** every field the schema defines is
-      reflected in its examples. Adding/renaming/removing a schema field updates every
-      example in lockstep: important new fields appear in ≥1 example, renamed keys are
-      renamed, removed keys are purged from request *and* response examples. No example key
-      lacks a matching schema property; no schema field is silently absent from all examples.
-- [ ] **`example`, `default` and named-example values satisfy every constraint** — each
-      value is a member of the field's `enum`, matches its `format` (`date-time` UTC `Z`,
-      `uuid`, `int64` money in minor units), satisfies `pattern`, and respects
-      `minLength`/`maxLength`, `minimum`/`maximum`, `minItems`/`maxItems`. A property-level
-      `example`/`default` that violates its own `enum`/`pattern`/bounds is a contract bug.
-- [ ] **Response examples are correct against the schema *and* consistent with the request.**
-      On top of schema conformance (above), a response example that echoes or derives from
-      request fields must line up with a plausible request: echoed values (`amount`,
-      `currencyCode`, ids, `externalId`) match what the request sends, server-derived
-      `readOnly` fields (status, timestamps, generated ids) stay coherent, and a paired
-      request ↔ `2xx` example tells one story (no `USD` request answered by a `EUR`
-      response).
-- [ ] **Response examples cover the important scenarios — sparingly.** Every response with
-      a body has ≥1 named example for the primary (happy-path) outcome; default to **1–2
-      per response**. Add a **third+ only for a concrete business need** — genuinely
-      distinct outcomes a consumer handles differently (each `oneOf`/polymorphic variant,
-      or distinct error `code`s under one status). Flag over-provisioning: near-duplicate
-      examples differing only trivially (a name, a timestamp) collapse to one.
-- [ ] Example **data is coherent** — `sender.role`/author match the content, ids and
-      timestamps are plausible, no copy-paste slips (a customer line tagged `role: AGENT`).
-- [ ] **Error examples reference only real inputs *and* published codes (MUST).** In a
-      `4xx` example, every `error.fieldErrors[].field` — and any field named in
-      `error.details`/`message` — must be an actual request body property or parameter of
-      *that* operation; a `400` example flagging fields the request never defines (or
-      omitting the field that is actually validated) is a bug. Every `error.code` in the
-      example must be returnable for that input **and** published on
-      [Error Handling](https://docs.paysafe.com/docs/embedded-wallets/error-handling)
-      (or accompanied by a docs-update MUST — see A / reference.md §Published error codes).
-- [ ] Examples on a **response reused across operations** are valid for *each* op — a
-      terminal/"end" op reusing a generic `200` must not offer non-terminal states as
-      outcomes; give it a dedicated response/examples when the shared set is wrong.
-- [ ] Idempotent-replay notes/examples reflect the resource's **actual** state, not a
-      hardcoded one (don't pin a single `endReason`/`status` for every replay).
-
-### G. Documentation & spec drift
-- [ ] `info.description` and field/op descriptions **match what the spec implements** — no
-      aspirational or copied-in features (tokens, file uploads) with no backing path; no
-      stale wording ("applied when creating" on a now server-derived field).
-- [ ] Descriptions are **complete** — finish behaviour/idempotency notes with the
-      consequence (e.g. "…else returns `409`, see `ConversationConflict`"); no dangling
-      sentences.
-- [ ] Drop "values are examples" on a closed `enum` — the enum *is* the contract. A prose
-      "supported values" list must match the schema `enum`/`pattern` exactly (and use
-      backticks per E); do not invent a second, divergent list.
-
-### H. Completeness & lifecycle
-- [ ] **Status-code parity** — every code named in a description exists in that op's
-      `responses` and vice-versa; the `500`/`503` family used elsewhere is present on all
-      non-trivial ops.
-- [ ] **No unreachable declarations** — every error `code`/example and every schema is
-      reachable from ≥1 operation (a defined `409` error must be wired to the op that can
-      conflict, e.g. sending to an already-ended resource).
-- [ ] **Request vs response ownership** — server-owned fields (identity, timestamps,
-      status, derived context) are excluded from request schemas *and* examples, and
-      marked `readOnly` on the resource.
-- [ ] **Cross-operation required-ness** — a field `required` on a shared resource must be
-      guaranteed by every producer; don't require on the response what's optional/absent
-      on create.
-- [ ] **Closed sets constrained** — a fixed value list (language, etc.) uses
-      `enum`/`pattern`, not prose only; enum membership is complete and sensible (a
-      `SYSTEM_ENDED` reason implies a `SYSTEM` actor; question odd pairs like
-      `[NONE, STANDARD]`).
-- [ ] **Collections bounded** — client-supplied arrays carry `minItems`/`maxItems`.
-- [ ] **Terminal-state inputs are safe** — an endpoint that drives a resource to a
-      terminal state accepts only that target (`status: [ENDED]`), not the full lifecycle
-      enum.
-
-## Output format
-
-Report in chat in this shape — **summary first, findings by severity (highest first),
-then what passed.** Keep it scannable.
-
-```markdown
-## API MR Review — <title / branch>
-
-|          |                                         |
-|----------|-----------------------------------------|
-| Verdict  | ⛔ Changes requested                     |
-| Specs    | `apis/<file>.yaml` (+A/−D), …           |
-| Findings | 🔴 2 · 🟡 3 · ♻️ 1 · 🟢 4                 |
-
-**Why:** <one decisive sentence — the reason for this verdict>.
-
-### 🔴 Blockers — must fix before merge
-1. **<short title>** · `apis/<file>.yaml:<line>`
-   <problem, 1–2 lines>
-   **Fix:** <concrete change> · _ref: <convention>_
-
-### 🟡 Should fix
-1. **<title>** · `apis/<file>.yaml:<line>` — <problem>. **Fix:** <change>. _ref: <…>_
-
-### ♻️ Reuse
-1. **<new component> duplicates <existing>** · `apis/<file>.yaml:<line>`
-   **Use:** `$ref: './paysafe-wallet-api-common.yaml#/components/schemas/<X>'`
-
-### 🟢 Nits
-- <one-liners>
-
-### ✅ Checked, no issues
-<areas swept clean — e.g. naming · data types · pagination · security · version magnitude · published error codes>
-
-### CI gates — not evaluated here
-Breaking changes · version/CHANGELOG format · review-confirmation.
+```bash
+mkdir -p /tmp/paysafe-mr-review && git worktree add --detach /tmp/paysafe-mr-review/mr-<N> refs/mr/<N> && cd /tmp/paysafe-mr-review/mr-<N> && git diff --stat origin/<T>...HEAD -- apis/ && git diff origin/<T>...HEAD -- apis/ && for f in $(git diff --name-only origin/<T>...HEAD -- apis/); do echo "== $f"; /Users/zdravko.nestorov/.cursor/skills/paysafe-api-mr-review/.venv/bin/python /Users/zdravko.nestorov/.cursor/skills/paysafe-api-mr-review/scripts/validate-examples.py "$f"; done
 ```
 
-**Verdict rule:** any 🔴 → ⛔ Changes requested; only 🟡/♻️/🟢 → 🔧 Approve with nits;
-none → ✅ Approve. Lead with blockers; if nits run long, show the top ~5 and add "+N more".
-Every finding needs `file:line`, a concrete fix, and a convention ref.
+The validator checks every example against its schema, follows cross-file `$ref`s and
+understands discriminators. **Only compare against the base when the head run reports
+failures**; large legacy specs carry pre-existing ones, so a clean head needs no baseline.
+When you do need it, add a second worktree at `/tmp/paysafe-mr-review/base` on
+`origin/<T>`, run the validator there, and `diff` the two outputs.
 
-**Severity guide:**
-- 🔴 **Blocker** — hard-convention violation, or a bug that misleads a consumer into a
-  broken integration: redefined `Error`, `snake_case` property, money as decimal, an
-  example that contradicts its schema, one flagging / echoing a field the request doesn't
-  define, an **unpublished** `error.code` in examples (no matching docs entry and no docs
-  update), or inventing a new code that duplicates a published one's semantics.
-- 🟡 **Should fix** — deviates without strong reason; drift that won't break a client today.
-- ♻️ **Reuse** — an existing definition / **published** error code should be used instead.
-- 🟢 **Nit** — docs / example / style polish (including missing backticks around
-  identifiers or enum literals in descriptions).
+**Call 3 - reuse greps and targeted reads, in parallel.** Put every `rg` from
+[checklist.md](checklist.md) §Reuse-first into one shell call, and issue the `Read` calls
+for the changed spec regions alongside it. A diff hunk is rarely self-contained: resolve
+`$ref`s and read the whole operation before judging an example or a `fieldErrors[].field`.
+
+**Call 4 - build. Only at `deep` depth.**
+
+```bash
+cd /tmp/paysafe-mr-review/build && git checkout -q <sha> && rm -rf src/generated && ./gradlew generateSaasChatbot --console=plain --offline
+```
+
+Create the clone once with
+`git clone --shared --no-checkout <repo> /tmp/paysafe-mr-review/build`. It shares the
+workspace object store, so Call 1's fetch already put the commit there. Do not fetch in
+the clone; its `origin` is a local path.
+
+`rm -rf src/generated` is **mandatory**. The generator never deletes files, so classes from
+the previous SHA survive and collide, producing a fake error such as
+`TextMessage.java: error: interface expected here` that reads exactly like a real defect.
+Reused and warm, codegen takes about 2 seconds. Add `compileJava` (35s) only to test your
+own fix.
+
+**If `git checkout` refuses**, saying local changes to a spec would be overwritten while
+`git status --short` prints nothing, the clone's index is just stale after
+`--no-checkout`. Run `git status` once to refresh it, then checkout again. Do not reach
+for `git stash`, `git reset` or `rm`.
+
+**To compare generated code between base and head, reuse the one clone.** Check out the
+other SHA, delete `src/generated`, generate again, and read the file. Never copy the clone;
+it carries a full Gradle build directory and the copy buys you nothing. Two traps when you
+inspect the output: methods are indented four spaces, so an `rg` pattern anchored with
+`^  public` silently matches nothing and an interface looks empty, which is why you should
+`Read` the file instead; and a `oneOf` parent generates an interface exposing **only** the
+discriminator getter, whatever you put on the parent schema.
+
+**Call 5 - the report**, in chat. The GitLab MCP cannot post MR notes, so the author
+copies it. Clean up with `git worktree remove /tmp/paysafe-mr-review/mr-<N>` and leave the
+gradle clone in place.
+
+### Checking whether review comments are resolved
+
+Run this when the user asks, for example "check if comments are properly resolved". It
+answers two different questions, and you must report both: is the thread **resolved**, and
+is the comment **fixed in the spec**. A thread can be fixed but still open, which still
+blocks the merge.
+
+1. `get_merge_request` already tells you the blocking state. Read
+   `blocking_discussions_resolved`, `detailed_merge_status` (look for
+   `discussions_not_resolved`) and `user_notes_count`.
+2. Read the comment bodies with `search`, scope `notes`, `project_id: "1861"`,
+   `per_page: 100`. Filter the result for `noteable_type == "MergeRequest"` and
+   `noteable_iid == <N>`. Each note carries `resolvable`, `resolved`, `author` and `body`.
+3. `search` needs a keyword, so run two or three in one parallel batch using nouns from
+   the diff, such as the schema name, the field name and `Acknowledge` for the breaking
+   changes bot. Merge the results by note id.
+4. For every comment, check the head of the branch to see whether the requested change
+   landed. Report each one as fixed or not fixed, separately from resolved or not.
+
+**Known limit, always state it.** There is no "list merge request discussions" tool, so
+step 2 finds only notes whose text matches a keyword. If the count you recover is lower
+than `user_notes_count`, say so in the report and name the number you could not see.
+A reply inside a thread has `resolvable: false`; only the thread head can be resolved.
+
+**Never hunt for an API token to work around this.** Do not run `env`, do not read
+`~/.cursor/mcp.json`, `~/.netrc` or a `glab` config, and do not try to install `glab`.
+Those commands are denied on purpose and will stop the review to ask the user. The MCP
+server is already authenticated; if a tool is missing, report the gap instead.
+
+### Local branch instead of an MR
+
+Same flow without the MCP calls or the worktree: `git fetch origin`, then
+`git diff --stat origin/HEAD...HEAD -- apis/` and `git diff origin/HEAD...HEAD -- apis/`
+in the workspace, then Call 3 onward.
+
+### Quick depth caveat
+
+Without a clone you cannot do reuse discovery or check conformance against unchanged
+schemas. Say so in the report and offer to re-run at standard depth.
+
+## Checklist triggers
+
+One line each. Open [checklist.md](checklist.md) for the rule, the severity and the
+citation whenever a line fires.
+
+**A. Reuse and consistency (highest priority)** - common `Error` + named examples, not a
+local copy; `PagingResultMeta`/`Limit`/`Offset`/`Link` from common; money as `int64` minor
+units with `currencyCode`; timestamps `date-time` UTC; error codes reused and named
+`DW-<DOMAIN>-<REASON>`; lists as `{items, meta}` with limit/offset; shared headers not
+re-inlined.
+
+**B. Naming** - properties `camelCase`, schemas `PascalCase` without `Dto`, enums
+`UPPER_SNAKE_CASE`, `operationId` `kebab-case` and unique per file, tags `Title Case`.
+
+**C. Design** - right verb and status codes (no `422` here); accurate `required`,
+`readOnly`, `writeOnly`; constraints on new fields; removal or tightening is breaking;
+polymorphism follows the canonical shape; security scheme matches the spec family;
+internal surfaces in `*-internal-*` or `x-internal`.
+
+**D. Versioning and wiring** - `info.version` stays `@Version@`; bump magnitude fits, and
+in this repo a breaking change is a **patch**, never a major; `gradle.properties` equals
+the top CHANGELOG block with a Jira link; a new spec file is wired in `build.gradle` and
+the README.
+
+**E. Documentation** - `summary` plus `description` on operations; descriptions give
+business purpose, not a restatement; identifiers and enum literals in backticks; examples
+named `UPPER_SNAKE`, no secrets.
+
+**F. Examples** - conformance both ways, so no forbidden key, no missing `required`, and
+no schema field absent from every example; every `example` and `default` satisfies its own
+`enum`, `format`, `pattern` and bounds; response examples agree with a plausible request;
+one or two examples per response, more only for genuinely distinct outcomes; error
+examples name only real request fields; a shared response fits every operation that uses
+it.
+
+**G. Drift** - descriptions match what the spec implements; no dangling behaviour notes;
+prose value lists match the `enum`.
+
+**H. Completeness** - status codes named in prose exist in `responses`; no unreachable
+schema or error code; server-owned fields kept out of requests; required-ness holds across
+producers; closed sets use `enum`; client arrays bounded; terminal-state endpoints accept
+only the terminal value.
+
+## Never raise these (verified, they are correct)
+
+Each of these has been checked against the generator or the repo history. Raising them
+produces a false finding.
+
+- **`oneOf` + `discriminator` + a shared enum on every variant.** This is the required
+  shape. A per-variant inline enum breaks the build. Never propose single-value enums in
+  place of the shared enum, and never propose dropping the discriminator.
+- **A variant narrowing with `allOf: [$ref SharedEnum]` + sibling `enum: [ONE_VALUE]` +
+  `default`.** Equivalent to the `not: {enum: [...]}` form and it compiles. Verified on
+  MR 1214.
+- **A `oneOf` parent without `x-one-of-interface`, `type: object` or `required: [type]`.**
+  The generator still emits the correct interface. Verified on MR 1214.
+- **A missing common platform header** (`User-Agent`, `Paysafe-Wallet-Version`,
+  `Paysafe-Wallet-Platform`, `Partner-Application-Version`). They are global and mandatory
+  by design, never declared per operation.
+- **A breaking change shipped as a patch bump.** That is this repo's practice: 266
+  releases, zero major bumps.
+- **A green `api-breaking-changes` job as proof of compatibility.** It is `allow_failure`.
+
+## Report
+
+Skeleton and rules live in [reporting.md](reporting.md). Two things to remember here:
+few findings each explained in three or four plain sentences, and the verdict rule, which
+is any 🔴 means ⛔ Changes requested, only 🟡/♻️/🟢 means 🔧 Approve with nits, and none
+means ✅ Approve. 📋 never changes the verdict.
 
 ## Notes
+
 - Read-only: this skill reviews, it does not edit specs.
-- If asked to also check breaking changes, run
-  `./gradlew apiBreakingChangesVerification` or use the OASDiff MCP — do not hand-roll it.
+- Commands run without asking the user. `~/.cursor/permissions.json` holds only `autoRun`
+  guidance, so everything a review does is allowed and just a short deny list stops for
+  approval: privilege escalation, git commands that publish or rewrite history, deletes
+  outside `/tmp`, and credential reads. If a review command ever stops, it hit that list,
+  so change the command rather than asking for the deny list to be widened.
+- If asked to check breaking changes explicitly, run
+  `./gradlew apiBreakingChangesVerification` or use the OASDiff MCP. Do not hand-roll it.
 - Published error-code source of truth:
   https://docs.paysafe.com/docs/embedded-wallets/error-handling
-
-## Additional resources
-- [reference.md](reference.md) — full convention catalog with file:line examples
-  (includes §Published error codes).
-- [reuse-catalog.md](reuse-catalog.md) — reusable components, canonical field lexicon,
-  high-frequency error-code shortcuts, and the duplication heuristic.
-- [Embedded Wallets — Error Handling](https://docs.paysafe.com/docs/embedded-wallets/error-handling)
-  — canonical published error-code registry for client-facing APIs.

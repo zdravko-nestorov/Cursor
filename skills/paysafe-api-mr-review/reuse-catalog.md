@@ -61,9 +61,9 @@ fetch the docs page when the MR touches error examples/codes (see reference.md
 §Published error codes).
 
 **Canonical style for NEW codes:** `DW-<DOMAIN>-<REASON>` — UPPER case, hyphen-separated.
-MUST reuse a **published** code when the semantic already exists. Genuinely new codes
-MUST be added to the Error Handling docs (HTTP status + code + message) in the same
-change set or a linked docs MR — unpublished codes in OpenAPI examples are a 🔴 blocker.
+Reuse a **published** code when one already means the same thing (♻️). A wrong-style name
+is a 🔴 blocker. A correctly named new code still needs a docs row (HTTP status + code +
+message), but that is a **📋 After merge** task and does not block the merge.
 
 Reusable high-frequency codes (confirm still listed on the docs page):
 

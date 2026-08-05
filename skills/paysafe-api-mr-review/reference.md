@@ -83,16 +83,20 @@ run this decision tree:
 ```
 For each new/changed error.code in the MR:
   1. Exact match on the docs page (correct table)?
-       → OK (published). Prefer reusing it over inventing a twin.
-  2. No exact match, but a published code has the same semantic?
+       → OK. Prefer reusing it over inventing a twin.
+  2. No exact match, but a published code means the same thing?
        → ♻️ Reuse that published code. Do not mint a near-duplicate.
   3. Genuinely new outcome clients must handle?
-       → 🔴 until BOTH:
-          a) naming is DW-<DOMAIN>-<REASON> (UPPER, hyphens; no new numeric /
-             UPPER_SNAKE / DW_ underscore forms), AND
-          b) Error Handling docs are updated (same change set or linked docs MR)
-             with HTTP status + Error Code + Message/Description.
+       → Judge the NAME only:
+          a) wrong style (new numeric / UPPER_SNAKE / DW_ underscore)  → 🔴 (spec fix)
+          b) correct DW-<DOMAIN>-<REASON> (UPPER, hyphens)             → spec is fine
+             The missing docs entry is a 📋 After merge task, not a blocker.
 ```
+
+**Why the split.** A missing docs row is documentation work on another system. The author
+cannot fix it inside this MR, and listing it as a blocker buries the real spec bugs. The
+name, on the other hand, is frozen the moment clients integrate, so a wrong name must be
+fixed before merge.
 
 **Table discipline (do not conflate):**
 | Docs section | Use for |
@@ -109,12 +113,13 @@ examples. **Published ≠ style-perfect:** docs still list numeric legacy and so
 codes must be `DW-…` hyphens and must be added to the docs page.
 
 **Flag it when:**
-- 🔴 unpublished `error.code` in a changed example with no docs update.
-- 🔴 new code that duplicates a published semantic (should reuse).
-- 🔴 new code with wrong style (`DW_…`, bare `UPPER_SNAKE`, new numeric) even if a docs
-  PR is promised.
-- 🟡/`♻️` example uses a status-reason code as HTTP `error.code` (or the reverse) without
-  the field actually being that.
+- 🔴 new code with wrong style (`DW_…`, bare `UPPER_SNAKE`, new numeric), even if a docs
+  MR is promised.
+- ♻️ new code that duplicates a published one's meaning (reuse the published code).
+- 🟡 example uses a status-reason code as HTTP `error.code`, or the reverse, when the
+  field is not actually that.
+- 📋 correctly named new code that is not yet on the docs page. **One grouped line for all
+  of them.** Do not repeat the code list anywhere else in the report.
 
 ## Naming
 
@@ -175,17 +180,113 @@ a file** is the bar.
   header (`apis/paysafe-wallet-user-loyalty.yaml:906-911`), body ref ids
   (`onboardingReferenceId`), `If-Match`/ETag (instrument verification). Prefer reusing an
   existing pattern over inventing a new one.
-- **Polymorphism:** two accepted patterns, both common (`oneOf` in 7 specs,
-  `discriminator`+`mapping` in 10): (a) `oneOf`/`anyOf` variants, optionally with a
-  `discriminator`; (b) a base schema with `discriminator` + `mapping` and subtypes via
-  `allOf` (`apis/paysafe-wallet-api.yaml:4322-4326`). A `oneOf` whose variants have
-  disjoint `required` fields is **valid and acceptable — do not flag it**. A
-  `discriminator` is **optional**; propose adding one only as a 🟢 nit when it clearly
-  improves codegen, never as a required change. The oasdiff gate injects an equivalent
-  `oneOf` for discriminator-only schemas, so `oneOf` is the canonical shape for accurate
-  diffing.
+- **Polymorphism:** see §Polymorphism below. Short version: `oneOf` + `discriminator` +
+  a **shared** enum on every variant is the correct shape. Never flag it.
 - **Request bodies:** usually inline schema `$ref`; `components/requestBodies` only in
   checkout specs.
+
+## Polymorphism: `oneOf` + `discriminator` (canonical shape - do not flag)
+
+`oneOf` + `discriminator` + a **shared** enum referenced by every variant is the **correct
+and required** shape in this repo (`discriminator` in 10 specs, `oneOf` in 7). Treat it as
+right by default. Never ask an author to replace the shared enum with a per-variant inline
+`enum`, and never ask them to drop the `discriminator` to "tighten" validation.
+
+### Why the enum must be shared (hard codegen constraint)
+
+`GenerateJavaSpringService` turns the parent into a Java interface with **one** `getType()`
+signature. If each variant pins its discriminator property with its own inline `enum`, the
+generator emits a separate `TypeEnum` per variant and the build fails:
+
+```
+error: getType() in TextMessagePayload cannot implement getType() in MessageEntryPayload
+    return type TypeEnum is not compatible with String
+error: TextMessagePayload is not abstract and does not override abstract method getType()
+```
+
+So there is exactly one named enum schema, and every variant references it. This is not a
+style choice; the alternative does not compile.
+
+### How the variant is still pinned (`default` + `not`/`enum`)
+
+A shared enum on its own would let a `TextMessagePayload` claim `type: PARTICIPANT_CHANGED`.
+The repo closes that hole **inside the variant**, with `default` (documents the value) plus
+`not`/`enum` (rejects the others). Verified working shape, from
+`apis/paysafe-wallet-user-loyalty.yaml:3456-3532`:
+
+```yaml
+    ProductRewardInfoType:            # 1. one shared enum, referenced by every variant
+      type: string
+      enum: [EXTERNAL_VOUCHER, SWEEPSTAKE]
+
+    ProductRewardInfo:                # 2. the parent / interface
+      x-one-of-interface: true
+      type: object
+      title: Product Reward Info
+      description: Content of the reward...
+      discriminator:
+        propertyName: type
+        mapping:
+          EXTERNAL_VOUCHER: '#/components/schemas/ExternalVoucherProductRewardInfo'
+          SWEEPSTAKE: '#/components/schemas/SweepstakeProductRewardInfo'
+      oneOf:
+        - $ref: '#/components/schemas/ExternalVoucherProductRewardInfo'
+        - $ref: '#/components/schemas/SweepstakeProductRewardInfo'
+      required:
+        - type
+
+    ExternalVoucherProductRewardInfo: # 3. each variant pins its own value
+      type: object
+      properties:
+        type:
+          allOf:
+            - $ref: '#/components/schemas/ProductRewardInfoType'   # shared -> compiles
+          default: EXTERNAL_VOUCHER                                # documents the value
+          not:
+            enum: [SWEEPSTAKE]                                     # rejects the others
+      required:
+        - type
+```
+
+Same shape at `apis/paysafe-wallet-internal-user-instrument-verification-interaction.yaml`
+(`PlaidLinkInteractionResult` `:285-350`, variants `:358-392`). These two are the newest
+polymorphic specs and are the reference implementation.
+
+**Verified end to end** on a two-variant payload: `./gradlew generateSaasChatbot compileJava`
+succeeds, `{type: PARTICIPANT_CHANGED, text: ...}` is rejected, and the correct combinations
+are accepted. `default` + `not` costs nothing at codegen time.
+
+### Accepted variation: `allOf` base instead of repeating the property
+
+Instead of declaring the discriminator property in each variant, a variant may `allOf` a
+small base schema that declares it, then override only `default`
+(`apis/paysafe-wallet-webhooks.yaml`: `PaymentContentBase` `:1652-1660`, `PaymentContent`
+`:1674-1691`, `TransferUpdateObject` `:1692-1712`). Equally valid; do not push authors
+between the two.
+
+### Reviewer rules
+
+**Never raise these:**
+- "The variant's `type` should be a single-value `enum` instead of the shared enum."
+  Wrong: it breaks the build.
+- "Remove the `discriminator` so the `oneOf` validates strictly." Wrong: the discriminator
+  is the intended contract and drives client deserialization.
+- "A `oneOf` whose variants have disjoint `required` fields is ambiguous." It is valid and
+  acceptable.
+- "Add a `discriminator`" as a required change on a plain `oneOf`. A `discriminator` is
+  optional; suggest it only as a 🟢 nit when it clearly helps codegen.
+
+**Do raise these (🟡):**
+- A variant references the shared enum but has **no** `default` and **no** `not`/`enum`, so
+  nothing stops a mislabelled payload. Fix: add `default: <VALUE>` and
+  `not: { enum: [<every other value>] }` inside that variant. Keep the `$ref` as is.
+- The parent is missing `required: [<propertyName>]`, `type: object`, or
+  `x-one-of-interface: true` relative to the reference implementation above.
+- The `discriminator.mapping` and the `oneOf` list disagree (a variant in one, absent from
+  the other), or a `mapping` key is not a member of the shared enum.
+
+The oasdiff gate injects an equivalent `oneOf` for discriminator-only schemas, so keeping
+both `oneOf` and `discriminator` also gives accurate breaking-change diffs.
 
 ## Common platform headers (mandatory — never flag as "missing")
 
@@ -249,16 +350,34 @@ Read current `X.Y.Z` from `gradle.properties`; the MR's new value must follow:
 |--------|---------------|------|
 | Feature — new op/schema/field, additive | backward-compatible | `Y+1`, `Z=0` |
 | Bugfix / doc / example only | backward-compatible | `Z+1` |
-| Breaking — remove/rename/tighten (feature or bugfix, per oasdiff) | breaking | `X+1`, `Y=0`, `Z=0` |
+| Breaking — remove/rename/tighten (per oasdiff) | breaking | `Z+1` (see below) |
 
-Reconcile with the oasdiff gate: a reported breaking change **must** be a major bump; a new
-endpoint or optional field is a **minor**, never a patch. `CHANGELOG.md` must carry a top
-block `### Version X.Y.Z` **equal to** `gradle.properties`, a one-line imperative summary,
-and the Jira URL — with **no duplicate** block for that version.
+**Do NOT demand a major bump for a breaking change.** Textbook semver says `X+1`, and the
+`paysafe-semver-version-bump` skill still says so, but this repo has never done it.
+Measured across the whole `CHANGELOG.md`: **266 releases, zero `X.0.0` bumps**, and every
+breaking change shipped as a patch:
 
-**Flag it when:** magnitude ≠ change type (new endpoints shipped as `Z+1`; a breaking change
-shipped as minor), `CHANGELOG` heading ≠ `gradle.properties` version, a duplicate version
-block, or a missing Jira link.
+| Version | Change |
+|---------|--------|
+| `3.246.1` | Remove `QUOTATION` from a `PaymentType` enum |
+| `3.242.1` | Rename `expirationTime` to `linkTokenExpirationTime` |
+| `3.240.24` | Remove `fees` from Batch transfers |
+| `3.232.3` | Change `availablePoints` from array to object |
+| `3.219.5` | Remove the `waitForCompletion` parameter |
+| `3.218.5` | Change payment status to an enum, remove an object |
+| `3.207.6` | Change `fxAmount` amount to `int64` |
+| `3.171.2` | Remove `minSupported` from the versioning response |
+
+A breaking change carrying `Z+1` is therefore **correct here**. Report it as clean and say
+it matches repo practice, so a second reviewer does not re-raise it.
+
+`CHANGELOG.md` must still carry a top block `### Version X.Y.Z` **equal to**
+`gradle.properties`, a one-line imperative summary, and the Jira URL — with **no
+duplicate** block for that version.
+
+**Flag it when:** a new endpoint or a new additive field ships as `Z+1` instead of `Y+1`,
+the `CHANGELOG` heading ≠ `gradle.properties` version, there is a duplicate version block,
+or the Jira URL is missing.
 
 ## Public vs internal
 
